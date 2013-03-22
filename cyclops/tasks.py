@@ -5,7 +5,7 @@ import logging
 import Queue
 
 from tornado.ioloop import PeriodicCallback
-from tornado.httpclient import AsyncHTTPClient
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
 
 class ProjectsUpdateTask(object):
@@ -51,14 +51,17 @@ class SendToSentryTask(object):
         if response.error:
             logging.error("Error: %s" % response.error)
         else:
-            logging.debug("Request OK")
+            logging.debug("OK")
 
     def update(self):
         try:
-            url = self.application.items_to_process.get_nowait()
+            method, headers, url = self.application.items_to_process.get_nowait()
+
+            request = HTTPRequest(url=url, headers=headers, method=method)
+
             logging.info("Sending to sentry at %s" % url)
             http_client = AsyncHTTPClient(io_loop=self.main_loop)
-            http_client.fetch(url, self.handle_request)
+            http_client.fetch(request, self.handle_request)
             self.application.items_to_process.task_done()
         except Queue.Empty:
             pass
