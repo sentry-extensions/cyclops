@@ -9,7 +9,7 @@ from tornado.httpclient import AsyncHTTPClient
 from tornado.web import url
 from torndb import Connection
 
-from cyclops.handlers.router import RouterHandler
+from cyclops.handlers.router import RouterHandler, CountHandler
 from cyclops.handlers.healthcheck import HealthCheckHandler
 from cyclops.tasks import ProjectsUpdateTask, SendToSentryTask
 
@@ -20,6 +20,7 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
 
     handlers = [
         url(r'/api/(?P<project_id>\d+)/store/', RouterHandler, name="router"),
+        url(r'/count', CountHandler, name="count"),
         url(r'/healthcheck(?:/|\.html)?', HealthCheckHandler, name="healthcheck"),
     ]
 

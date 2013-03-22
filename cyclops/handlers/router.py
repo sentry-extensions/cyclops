@@ -30,3 +30,10 @@ class RouterHandler(BaseHandler):
         self.set_status(200)
         self.write("OK")
         self.finish()
+
+
+class CountHandler(BaseHandler):
+    @tornado.web.asynchronous
+    def get(self):
+        self.write(str(len(self.application.items_to_process)))
+        self.finish()
