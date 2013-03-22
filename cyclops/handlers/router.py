@@ -37,5 +37,5 @@ class RouterHandler(BaseHandler):
 class CountHandler(BaseHandler):
     @tornado.web.asynchronous
     def get(self):
-        self.write(str(len(self.application.items_to_process)))
+        self.write(str(self.application.items_to_process.qsize()))
         self.finish()
