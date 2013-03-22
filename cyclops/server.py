@@ -30,7 +30,7 @@ def main(args=None):
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', '-p', type=int, default="9999", help="Port to start the server with.")
-    parser.add_argument('--bind', '-b', default="local.fightcodegame.com", help="IP to bind the server to.")
+    parser.add_argument('--bind', '-b', default="0.0.0.0", help="IP to bind the server to.")
     parser.add_argument('--conf', '-c', default=DEFAULT_CONFIG_PATH, help="Path to configuration file.")
     parser.add_argument('--verbose', '-v', action='count', default=0, help='Log level: v=warning, vv=info, vvv=debug.')
     parser.add_argument(
