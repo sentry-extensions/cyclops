@@ -2,3 +2,4 @@ tornado
 torndb
 derpconf
 pycurl
+requests

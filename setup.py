@@ -36,12 +36,14 @@ It keeps items in memory and dumps them at sentry in regular intervals.
         'tornado',
         'torndb',
         'derpconf',
-        'pycurl'
+        'pycurl',
+        'requests'
     ],
 
     entry_points={
         'console_scripts': [
             'cyclops=cyclops.server:main',
+            'cyclops-count=cyclops.count:main',
         ],
     }
 )
