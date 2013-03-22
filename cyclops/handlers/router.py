@@ -26,7 +26,8 @@ class RouterHandler(BaseHandler):
 
         url = "%s/api/%d/store/?%s" % (self.application.config.SENTRY_BASE_URL, project_id, self.request.query)
         headers = self.request.headers
-        self.application.items_to_process.put(("GET", headers, url))
+        body = self.request.body
+        self.application.items_to_process.put(("GET", headers, url, body))
 
         self.set_status(200)
         self.write("OK")

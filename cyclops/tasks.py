@@ -55,9 +55,9 @@ class SendToSentryTask(object):
 
     def update(self):
         try:
-            method, headers, url = self.application.items_to_process.get_nowait()
+            method, headers, url, body = self.application.items_to_process.get_nowait()
 
-            request = HTTPRequest(url=url, headers=headers, method=method)
+            request = HTTPRequest(url=url, headers=headers, method=method, body=body)
 
             logging.info("Sending to sentry at %s" % url)
             http_client = AsyncHTTPClient(io_loop=self.main_loop)
