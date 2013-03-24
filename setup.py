@@ -37,7 +37,8 @@ It keeps items in memory and dumps them at sentry in regular intervals.
         'torndb',
         'derpconf',
         'pycurl',
-        'requests'
+        'requests',
+        'ujson'
     ],
 
     entry_points={

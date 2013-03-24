@@ -43,6 +43,9 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
 
     self.project_keys = {}
     self.items_to_process = Queue()
+    self.last_requests = []
+    self.average_request_time = None
+    self.percentile_request_time = None
 
     projects_update_task = ProjectsUpdateTask(self, self.main_loop)
     projects_update_task.update()

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import tornado.web
+from ujson import dumps
 
 from cyclops.handlers.base import BaseHandler
 
@@ -37,5 +38,10 @@ class RouterHandler(BaseHandler):
 class CountHandler(BaseHandler):
     @tornado.web.asynchronous
     def get(self):
-        self.write(str(self.application.items_to_process.qsize()))
+        result = {
+            'count': self.application.items_to_process.qsize(),
+            'average': self.application.average_request_time,
+            'percentile': self.application.percentile_request_time
+        }
+        self.write(dumps(result))
         self.finish()

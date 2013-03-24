@@ -3,3 +3,4 @@ torndb
 derpconf
 pycurl
 requests
+ujson

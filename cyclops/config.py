@@ -8,7 +8,9 @@ MINUTES = 60
 Config.define('HEALTHCHECK_TEXT', 'WORKING', 'Healthcheck text.', 'General')
 Config.define('SENTRY_BASE_URL', 'http://localhost:9000', 'Sentry base url to access the API with.', 'General')
 Config.define('UPDATE_PERIOD', 2 * MINUTES, 'Time in seconds to update the project public and private keys.', 'General')
-Config.define('DUMP_INTERVAL', 100, 'Time in miliseconds to send a request to sentry.', 'General')
+Config.define('MAX_DUMP_INTERVAL', 1000, 'Maximum Time in miliseconds to send a request to sentry.', 'General')
+Config.define('MAX_REQUESTS_TO_AVERAGE', 5000, 'Maximum number of requests to average.', 'General')
+
 
 Config.define('MYSQL_HOST', 'localhost', 'MySQL host.', 'Database')
 Config.define('MYSQL_PORT', 3306, 'MySQL host.', 'Database')

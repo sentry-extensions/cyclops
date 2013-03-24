@@ -3,6 +3,7 @@
 
 import sys
 import argparse
+from ujson import loads
 
 import requests
 
@@ -11,7 +12,9 @@ def get_count(host, port):
     url = 'http://%s:%d/count' % (host, port)
     try:
         r = requests.get(url)
-        return int(r.text)
+        obj = loads(r.text)
+
+        return obj
     except:
         print "Failed to get count for %s." % url
         return 0
@@ -31,14 +34,26 @@ def main(args=None):
     starting = int(starting)
     last = int(last)
 
+    total_request_time = 0
+    percentile_request_time = 0
+    number_of_servers = 0
+
     count = 0
-    for port in range(last - starting):
+    for port in range(last - starting + 1):
+        number_of_servers += 1
         server_count = get_count(options.host, starting + port)
-        print "%s:%d has still %d messages to process" % (options.host, starting + port, server_count)
-        count += server_count
+        print "%s:%d has still %d messages to process" % (options.host, starting + port, server_count['count'])
+        count += server_count['count']
+        total_request_time += server_count['average']
+        percentile_request_time += server_count['percentile']
 
     print
     print "Total of %d messages to send to sentry from the farm at %s." % (count, options.host)
+    print
+    print "Average sentry response time is %.2fms and 90%% Percentile is %.2fms" % (
+        float(total_request_time) / number_of_servers,
+        float(percentile_request_time) / number_of_servers
+    )
     print
 
 
