@@ -85,7 +85,7 @@ class SendToSentryTask(object):
 
             request = HTTPRequest(url=url, headers=headers, method=method, body=body)
 
-            logging.info("Sending to sentry at %s" % url)
+            logging.debug("Sending to sentry at %s" % url)
             self.start_time = time.time()
             self.last_sent = time.time()
             http_client = AsyncHTTPClient(io_loop=self.main_loop)
