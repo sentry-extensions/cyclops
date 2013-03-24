@@ -1,5 +1,5 @@
 run:
-	@python cyclops/server.py -vvv
+	@python cyclops/server.py -vv
 
 run-prod:
 	@python cyclops/server.py

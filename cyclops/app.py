@@ -20,6 +20,7 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
 
     handlers = [
         url(r'/api/(?P<project_id>\d+)/store/', RouterHandler, name="router"),
+        url(r'/api/store/', RouterHandler, name="router_post"),
         url(r'/count', CountHandler, name="count"),
         url(r'/healthcheck(?:/|\.html)?', HealthCheckHandler, name="healthcheck"),
     ]
