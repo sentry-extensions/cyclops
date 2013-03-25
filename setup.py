@@ -38,7 +38,8 @@ It keeps items in memory and dumps them at sentry in regular intervals.
         'derpconf',
         'pycurl',
         'requests',
-        'ujson'
+        'ujson',
+        'msgpack-python'
     ],
 
     entry_points={

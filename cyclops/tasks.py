@@ -7,6 +7,7 @@ import time
 
 from tornado.ioloop import PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+import msgpack
 
 
 class ProjectsUpdateTask(object):
@@ -84,7 +85,9 @@ class SendToSentryTask(object):
                     time.time() - self.last_sent < (self.application.percentile_request_time / 1000):
                 return
 
-            method, headers, url, body = self.application.items_to_process.get_nowait()
+            msg = self.application.items_to_process.get_nowait()
+            msg = msgpack.unpackb(msg)
+            method, headers, url, body = msg['method'], msg['headers'], msg['url'], msg['body']
 
             request = HTTPRequest(url=url, headers=headers, method=method, body=body)
 

@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import tornado.web
 import re
+
+import tornado.web
 from ujson import dumps
+import msgpack
 
 from cyclops.handlers.base import BaseHandler
 
@@ -74,7 +76,15 @@ class RouterHandler(BaseHandler):
     def process_request(self, project_id, url):
         headers = self.request.headers
         body = self.request.body
-        self.application.items_to_process.put((self.request.method, headers, url, body))
+
+        message = {
+            'method': self.request.method,
+            'headers': headers,
+            'url': url,
+            'body': body
+        }
+
+        self.application.items_to_process.put(msgpack.packb(message))
 
         self.set_status(200)
         self.write("OK")
