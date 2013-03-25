@@ -64,20 +64,26 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
     ## Defaults to: WORKING
     #HEALTHCHECK_TEXT = 'WORKING'
 
-    ## [sentry](http://getsentry.com) server name. This is the base URL that Cyclops will use to send
-    ## requests to [sentry](http://getsentry.com).
+    ## Sentry server name. This is the base URL that Cyclops will use to send
+    ## requests to sentry.
     ## Defaults to: localhost:9000
-    #[sentry](http://getsentry.com)_BASE_URL = 'localhost:9000'
+    #SENTRY_BASE_URL = 'localhost:9000'
 
-    ## Cyclops keeps [sentry](http://getsentry.com)'s projects public and security keys in memory. This
+    ## Cyclops keeps sentry's projects public and security keys in memory. This
     ## allows a very fast validation as to whether each request is valid. This
     ## configuration defines the interval in seconds that Cyclops will update the
     ## keys.
     ## Defaults to: 120
     #UPDATE_PERIOD = 120
 
+    ## This configuration tells cyclops to process newly arrived error reports first.
+    ## This is very useful to avoid that error bursts stop you from seeing new
+    ## errors.
+    ## Defaults to: True
+    #PROCESS_NEWER_MESSAGES_FIRST = True
+
     ## The storage class used in Cyclops. Storage classes are what define how
-    ## received requests will be treated *before* sending to [sentry](http://getsentry.com). Inherits from
+    ## received requests will be treated *before* sending to sentry. Inherits from
     ## cyclops.storage.base.Storage. Built-ins: "cyclops.storage.memory" and
     ## "cyclops.storage.redis."
     ## Defaults to: cyclops.storage.memory
@@ -88,16 +94,16 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
 
     ################################# Performance ##################################
 
-    ## Cyclops will try to send the errors it receives to [sentry](http://getsentry.com) as fast as possible.
-    ## This is done using a percentile average of 90% of the last [sentry](http://getsentry.com) requests
-    ## time. If those requests were serviced in 30ms average, then Cyclops will
+    ## Cyclops will try to send the errors it receives to sentry as fast as possible.
+    ## This is done using a percentile average of 90% of the last sentry requests
+    ## time. If those requests were serviced in 30ms average, then cyclops will
     ## keep sending requests every 30ms. This setting specify a maximum interval
-    ## in miliseconds to send requests to [sentry](http://getsentry.com).
+    ## in miliseconds to send requests to sentry.
     ## Defaults to: 1000
     #MAX_DUMP_INTERVAL = 1000
 
     ## In order to calculate the average requests, Cyclops keeps track of the times
-    ## of the last requests sent to [sentry](http://getsentry.com). This setting specifies the maximum
+    ## of the last requests sent to sentry. This setting specifies the maximum
     ## number of requests to average.
     ## Defaults to: 5000
     #MAX_REQUESTS_TO_AVERAGE = 5000
@@ -107,23 +113,23 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
 
     ################################### Database ###################################
 
-    ## Host of your [sentry](http://getsentry.com) installation MySQL database.
+    ## Host of your sentry installation MySQL database.
     ## Defaults to: localhost
     #MYSQL_HOST = 'localhost'
 
-    ## Port of your [sentry](http://getsentry.com) installation MySQL database.
+    ## Port of your sentry installation MySQL database.
     ## Defaults to: 3306
     #MYSQL_PORT = 3306
 
-    ## Database of your [sentry](http://getsentry.com) installation MySQL database.
-    ## Defaults to: [sentry](http://getsentry.com)
-    #MYSQL_DB = '[sentry](http://getsentry.com)'
+    ## Database of your sentry installation MySQL database.
+    ## Defaults to: sentry
+    #MYSQL_DB = 'sentry'
 
-    ## User of your [sentry](http://getsentry.com) installation MySQL database.
+    ## User of your sentry installation MySQL database.
     ## Defaults to: root
     #MYSQL_USER = 'root'
 
-    ## Password of your [sentry](http://getsentry.com) installation MySQL database.
+    ## Password of your sentry installation MySQL database.
     ## Defaults to: 
     #MYSQL_PASS = ''
 
