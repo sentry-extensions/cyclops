@@ -40,10 +40,12 @@ class RouterHandler(BaseHandler):
         if self.application.config.URL_CACHE_EXPIRATION > 0 and self.application.cache.get(url) is not None:
             self.set_status(304)
             self.set_header("X-CYCLOPS-IGNORED", "INVISIBLE")
+            self.application.ignored_items += 1
             self.finish()
             return
 
         self.set_header("X-CYCLOPS-IGNORED", "PROCESSED")
+        self.application.processed_items += 1
         if self.application.config.URL_CACHE_EXPIRATION > 0:
             self.application.cache.set(url, self.application.config.URL_CACHE_EXPIRATION)
         self.process_request(project_id, url)
@@ -76,6 +78,8 @@ class RouterHandler(BaseHandler):
             self._404()
             return
 
+        self.application.processed_items += 1
+
         base_url = self.application.config.SENTRY_BASE_URL.replace('http://', '').replace('https://', '')
         base_url = "%s://%s:%s@%s" % (self.request.protocol, sentry_key, sentry_secret, base_url)
         url = "%s%s?%s" % (base_url, self.request.path, self.request.query)
@@ -106,7 +110,9 @@ class CountHandler(BaseHandler):
         result = {
             'count': self.application.items_to_process.qsize(),
             'average': self.application.average_request_time,
-            'percentile': self.application.percentile_request_time
+            'percentile': self.application.percentile_request_time,
+            'processed': self.application.processed_items,
+            'ignored': self.application.ignored_items
         }
         self.write(dumps(result))
         self.finish()

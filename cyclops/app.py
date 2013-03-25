@@ -55,6 +55,9 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
 
     self.project_keys = {}
 
+    self.processed_items = 0
+    self.ignored_items = 0
+
     if self.config.PROCESS_NEWER_MESSAGES_FIRST:
         self.items_to_process = LifoQueue()
     else:

@@ -40,6 +40,9 @@ def main(args=None):
     number_of_servers_with_average = 0
     number_of_servers_with_percentile = 0
 
+    processed_items = 0
+    ignored_items = 0
+
     count = 0
     for port in range(last - starting + 1):
         number_of_servers += 1
@@ -62,6 +65,9 @@ def main(args=None):
             percentile_request_time += server_count['percentile']
             number_of_servers_with_percentile += 1
 
+        processed_items += server_count['processed']
+        ignored_items += server_count['ignored']
+
     if number_of_servers_with_average == 0:
         number_of_servers_with_average = 1
 
@@ -71,6 +77,8 @@ def main(args=None):
     print
     print "Total of %d messages to send to sentry from the farm at %s." % (count, options.host)
     print
+    print "Total %d processed items and %d ignored items (%.2f)." % (processed_items, ignored_items, (ignored_items / (processed_items + ignored_items) * 100))
+
     print "Average sentry response time is %.2fms and 90%% Percentile is %.2fms" % (
         float(total_request_time) / number_of_servers_with_average,
         float(percentile_request_time) / number_of_servers_with_percentile
