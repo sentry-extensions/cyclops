@@ -28,10 +28,9 @@ class RedisCache(Cache):
             self.redis = redis.StrictRedis(
                 host=self.application.config.REDIS_HOST,
                 port=self.application.config.REDIS_PORT,
-                db=self.application.config.REDIS_DB_COUNT
+                db=self.application.config.REDIS_DB_COUNT,
+                password=self.application.config.REDIS_PASSWORD
             )
-            if self.application.config.REDIS_PASSWORD is not None:
-                self.redis.auth(self.application.config.REDIS_PASSWORD)
 
     def get(self, key):
         return self.redis.get(key)
