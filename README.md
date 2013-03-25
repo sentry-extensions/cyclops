@@ -132,7 +132,7 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
 The Routes
 ==========
 
-Cyclops mymics the `api/store` routes in [sentry](http://getsentry.com). Both the GET and POST routes.
+Cyclops mymics the `api/store` routes in [sentry](http://getsentry.com). Both the `GET` and `POST` routes.
 
 You can send the errors to Cyclops in *EXACTLY* the same way you would send to [sentry](http://getsentry.com).
 
