@@ -1,30 +1,30 @@
 Cyclops
 =======
 
-Cyclops is meant to be a high performance barrier in front of Sentry (http://getsentry.com).
+![Cyclops is meant to be a high performance barrier in front of [sentry](http://getsentry.com)](/logo.png)
 
 Disclaimer
 ==========
 
-I am a huge fan of sentry and it has literally changed the level of quality of all my apps that use it, web or not.
+I am a huge fan of [sentry](http://getsentry.com) and it has literally changed the level of quality of all my apps that use it, web or not.
 
 Huge props to the whole team behind it and to @disqus for releasing it to the public as open source, thus allowing us to better understand how it works.
 
 The Issue
 =========
 
-That said, if you have a volume of requests as large as we do (> 5000 requests/second), a single Javascript error being tracked by sentry could bring our whole sentry farm down.
+That said, if you have a volume of requests as large as we do (> 5000 requests/second), a single Javascript error being tracked by [sentry](http://getsentry.com) could bring our whole [sentry](http://getsentry.com) farm down.
 
-We did some extensive Load Testing with Sentry and the results will be available to everyone soon. It's just not viable for us to have sentry as the Front End to our error reporting.
+We did some extensive Load Testing with [sentry](http://getsentry.com) and the results will be available to everyone soon. It's just not viable for us to have [sentry](http://getsentry.com) as the Front End to our error reporting.
 
-We needed something that could handle tens of thousands of error reporting requests per second, then send it to Sentry in a rate that it can process.
+We needed something that could handle tens of thousands of error reporting requests per second, then send it to [sentry](http://getsentry.com) in a rate that it can process.
 
 Cyclops
 =======
 
-Cyclops is a router of sentry error reporting requests. It receives error reports, keeps them in-memory (or any other storage you implement) and sends to your sentry backend in regular intervals.
+Cyclops is a router of [sentry](http://getsentry.com) error reporting requests. It receives error reports, keeps them in-memory (or any other storage you implement) and sends to your [sentry](http://getsentry.com) backend in regular intervals.
 
-It takes into account the time your sentry backend is taking to service each request when calculating the interval with which to send the next request, thus making sure you don't flood your sentry backend.
+It takes into account the time your [sentry](http://getsentry.com) backend is taking to service each request when calculating the interval with which to send the next request, thus making sure you don't flood your [sentry](http://getsentry.com) backend.
 
 In our Load Testing, a server with 23 instances of Cyclops running handled more than 12 thousand requests per second.
 
@@ -57,7 +57,7 @@ The arguments are pretty explanatory. The key argument is the configuration file
 Configuration
 =============
 
-The configuration file is where you tell Cyclops how to behave, how to store data, how to connect to sentry, etc.
+The configuration file is where you tell Cyclops how to behave, how to store data, how to connect to [sentry](http://getsentry.com), etc.
 
     ################################### General ####################################
 
@@ -67,12 +67,12 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
     ## Defaults to: WORKING
     #HEALTHCHECK_TEXT = 'WORKING'
 
-    ## Sentry server name. This is the base URL that Cyclops will use to send
-    ## requests to sentry.
+    ## [sentry](http://getsentry.com) server name. This is the base URL that Cyclops will use to send
+    ## requests to [sentry](http://getsentry.com).
     ## Defaults to: localhost:9000
-    #SENTRY_BASE_URL = 'localhost:9000'
+    #[sentry](http://getsentry.com)_BASE_URL = 'localhost:9000'
 
-    ## Cyclops keeps sentry's projects public and security keys in memory. This
+    ## Cyclops keeps [sentry](http://getsentry.com)'s projects public and security keys in memory. This
     ## allows a very fast validation as to whether each request is valid. This
     ## configuration defines the interval in seconds that Cyclops will update the
     ## keys.
@@ -80,7 +80,7 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
     #UPDATE_PERIOD = 120
 
     ## The storage class used in Cyclops. Storage classes are what define how
-    ## received requests will be treated *before* sending to sentry. Inherits from
+    ## received requests will be treated *before* sending to [sentry](http://getsentry.com). Inherits from
     ## cyclops.storage.base.Storage. Built-ins: "cyclops.storage.memory" and
     ## "cyclops.storage.redis."
     ## Defaults to: cyclops.storage.memory
@@ -91,16 +91,16 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
 
     ################################# Performance ##################################
 
-    ## Cyclops will try to send the errors it receives to sentry as fast as possible.
-    ## This is done using a percentile average of 90% of the last sentry requests
+    ## Cyclops will try to send the errors it receives to [sentry](http://getsentry.com) as fast as possible.
+    ## This is done using a percentile average of 90% of the last [sentry](http://getsentry.com) requests
     ## time. If those requests were serviced in 30ms average, then Cyclops will
     ## keep sending requests every 30ms. This setting specify a maximum interval
-    ## in miliseconds to send requests to sentry.
+    ## in miliseconds to send requests to [sentry](http://getsentry.com).
     ## Defaults to: 1000
     #MAX_DUMP_INTERVAL = 1000
 
     ## In order to calculate the average requests, Cyclops keeps track of the times
-    ## of the last requests sent to sentry. This setting specifies the maximum
+    ## of the last requests sent to [sentry](http://getsentry.com). This setting specifies the maximum
     ## number of requests to average.
     ## Defaults to: 5000
     #MAX_REQUESTS_TO_AVERAGE = 5000
@@ -110,23 +110,23 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
 
     ################################### Database ###################################
 
-    ## Host of your sentry installation MySQL database.
+    ## Host of your [sentry](http://getsentry.com) installation MySQL database.
     ## Defaults to: localhost
     #MYSQL_HOST = 'localhost'
 
-    ## Port of your sentry installation MySQL database.
+    ## Port of your [sentry](http://getsentry.com) installation MySQL database.
     ## Defaults to: 3306
     #MYSQL_PORT = 3306
 
-    ## Database of your sentry installation MySQL database.
-    ## Defaults to: sentry
-    #MYSQL_DB = 'sentry'
+    ## Database of your [sentry](http://getsentry.com) installation MySQL database.
+    ## Defaults to: [sentry](http://getsentry.com)
+    #MYSQL_DB = '[sentry](http://getsentry.com)'
 
-    ## User of your sentry installation MySQL database.
+    ## User of your [sentry](http://getsentry.com) installation MySQL database.
     ## Defaults to: root
     #MYSQL_USER = 'root'
 
-    ## Password of your sentry installation MySQL database.
+    ## Password of your [sentry](http://getsentry.com) installation MySQL database.
     ## Defaults to: 
     #MYSQL_PASS = ''
 
@@ -135,9 +135,9 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
 The Routes
 ==========
 
-Cyclops mymics the api/store routes in sentry. Both the GET and POST routes.
+Cyclops mymics the api/store routes in [sentry](http://getsentry.com). Both the GET and POST routes.
 
-You can send the errors to Cyclops in *EXACTLY* the same way you would send to sentry.
+You can send the errors to Cyclops in *EXACTLY* the same way you would send to [sentry](http://getsentry.com).
 
 There's one additional route, though: `/count`.
 
@@ -168,9 +168,9 @@ This command would return output similar to:
     localhost:9003 has still 10 messages to process
     localhost:9004 has still 10 messages to process
 
-    Total of 50 messages to send to sentry from the farm at localhost.
+    Total of 50 messages to send to [sentry](http://getsentry.com) from the farm at localhost.
 
-    Average sentry response time is 2918.66ms and 90% Percentile is 2339.53ms
+    Average [sentry](http://getsentry.com) response time is 2918.66ms and 90% Percentile is 2339.53ms
 
 This way you can keep track of how your farm is doing *A LOT* easier.
 
@@ -181,4 +181,4 @@ The way we are hosting Cyclops is pretty standard.
 
 We have a [supervisor](http://supervisord.org/) instance that starts 24 instances of Cyclops in ports ranging from 9100 to 9123.
 
-We then use NGinx to load-balance traffic to them, and use the NGinx port to send sentry traffic to. If anyone is interested in a sample configuration for both supervisor and NGinx, just create an issue.
+We then use NGinx to load-balance traffic to them, and use the NGinx port to send [sentry](http://getsentry.com) traffic to. If anyone is interested in a sample configuration for both supervisor and NGinx, just create an issue.
