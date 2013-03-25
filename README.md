@@ -179,3 +179,23 @@ The way we are hosting Cyclops is pretty standard.
 We have a [supervisor](http://supervisord.org/) instance that starts 24 instances of Cyclops in ports ranging from 9100 to 9123.
 
 We then use NGinx to load-balance traffic to them, and use the NGinx port to send [sentry](http://getsentry.com) traffic to. If anyone is interested in a sample configuration for both supervisor and NGinx, just create an issue.
+
+Contributing
+============
+
+If you wish to contribute to Cyclops, file and issue or send us a pull request.
+
+License
+=======
+
+Cyclops is licensed under the MIT License:
+
+    The MIT License
+
+    Copyright (c) 2013 Bernardo Heynemann heynemann@gmail.com
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
