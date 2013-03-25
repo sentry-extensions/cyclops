@@ -27,10 +27,12 @@ Config.define('MYSQL_DB', 'sentry', 'Database of your sentry installation MySQL 
 Config.define('MYSQL_USER', 'root', 'User of your sentry installation MySQL database.', 'Database')
 Config.define('MYSQL_PASS', '', 'Password of your sentry installation MySQL database.', 'Database')
 
-#Config.define('REDIS_HOST', '127.0.0.1', 'The host where the Redis server is running.', 'Cache')
-#Config.define('REDIS_PORT', 7778, 'The port that Redis server is running.', 'Cache')
-#Config.define('REDIS_DB_COUNT', 0, 'The number of redis db.', 'Cache')
-#Config.define('REDIS_PASSWORD', '', 'The redis password', 'Cache')
+Config.define('URL_CACHE_EXPIRATION', 1, 'The amount of seconds to cache a given URL of error. This is meant to be a way to avoid flooding your sentry farm with repeated errors. Set to 0 if you don\'t want to cache any errors.', 'Cache')
+Config.define('CACHE_IMPLEMENTATION_CLASS', 'cyclops.cache.RedisCache', 'The cache implementation to use to avoid sending the same error again to sentry.', 'Cache')
+Config.define('REDIS_HOST', '127.0.0.1', 'The host where the Redis server is running. If you are not using redis, set this to None.', 'Cache')
+Config.define('REDIS_PORT', 7780, 'The port that Redis server is running.', 'Cache')
+Config.define('REDIS_DB_COUNT', 0, 'The number of redis db.', 'Cache')
+Config.define('REDIS_PASSWORD', None, 'The redis password', 'Cache')
 
 if __name__ == '__main__':
     generate_config()

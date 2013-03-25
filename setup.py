@@ -39,7 +39,8 @@ It keeps items in memory and dumps them at sentry in regular intervals.
         'pycurl',
         'requests',
         'ujson',
-        'msgpack-python'
+        'msgpack-python',
+        'redis-lock'
     ],
 
     entry_points={

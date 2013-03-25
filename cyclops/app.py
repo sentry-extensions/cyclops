@@ -14,6 +14,15 @@ from cyclops.handlers.healthcheck import HealthCheckHandler
 from cyclops.tasks import ProjectsUpdateTask, SendToSentryTask
 
 
+def get_cache(module_name):
+    if '.' in module_name:
+        modules = module_name.split('.')
+    else:
+        modules = [module_name]
+
+    return reduce(getattr, modules[1:], __import__(".".join(modules[:-1])))
+
+
 def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=None):
     self.config = config
     self.main_loop = main_loop
@@ -39,8 +48,10 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
         password=self.config.MYSQL_PASS
     )
 
-    options = {
-    }
+    cache_class = get_cache(self.config.CACHE_IMPLEMENTATION_CLASS)
+    self.cache = cache_class(self)
+
+    options = {}
 
     self.project_keys = {}
 

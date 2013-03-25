@@ -37,6 +37,15 @@ class RouterHandler(BaseHandler):
 
         url = "%s%s?%s" % (self.application.config.SENTRY_BASE_URL, self.request.path, self.request.query)
 
+        if self.application.config.URL_CACHE_EXPIRATION > 0 and self.application.cache.get(url) is not None:
+            self.set_status(304)
+            self.set_header("X-CYCLOPS-IGNORED", "INVISIBLE")
+            self.finish()
+            return
+
+        self.set_header("X-CYCLOPS-IGNORED", "PROCESSED")
+        if self.application.config.URL_CACHE_EXPIRATION > 0:
+            self.application.cache.set(url, self.application.config.URL_CACHE_EXPIRATION)
         self.process_request(project_id, url)
 
     @tornado.web.asynchronous
