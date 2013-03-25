@@ -51,8 +51,9 @@ class SendToSentryTask(object):
         periodic_task.start()
 
     def handle_request(self, response):
-        logging.debug("Request handled in %.2f" % (time.time() - self.start_time))
-        self.application.last_requests.append(time.time() - self.start_time)
+        response_time = response.request_time
+        logging.debug("Request handled in %.2f" % response_time)
+        self.application.last_requests.append(response_time)
         self.application.last_requests = self.application.last_requests[
             max(0, len(self.application.last_requests) - self.application.config.MAX_REQUESTS_TO_AVERAGE):]
         self.application.average_request_time = self.mean(self.application.last_requests) * 1000
