@@ -85,9 +85,7 @@ class SendToSentryTask(object):
                     time.time() - self.last_sent < (self.application.percentile_request_time / 1000):
                 return
 
-            msg = self.application.items_to_process.get_nowait()
-            msg = msgpack.unpackb(msg)
-            method, headers, url, body = msg['method'], msg['headers'], msg['url'], msg['body']
+            method, headers, url, body = msgpack.unpackb(self.application.items_to_process.get_nowait())
 
             request = HTTPRequest(url=url, headers=headers, method=method, body=body)
 

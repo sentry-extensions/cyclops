@@ -77,12 +77,12 @@ class RouterHandler(BaseHandler):
         headers = self.request.headers
         body = self.request.body
 
-        message = {
-            'method': self.request.method,
-            'headers': headers,
-            'url': url,
-            'body': body
-        }
+        message = (
+            self.request.method,
+            headers,
+            url,
+            body
+        )
 
         self.application.items_to_process.put(msgpack.packb(message))
 
