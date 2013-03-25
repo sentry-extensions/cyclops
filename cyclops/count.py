@@ -17,7 +17,7 @@ def get_count(host, port):
         return obj
     except:
         print "Failed to get count for %s." % url
-        return 0
+        return None
 
 
 def main(args=None):
@@ -45,6 +45,12 @@ def main(args=None):
         number_of_servers += 1
 
         server_count = get_count(options.host, starting + port)
+        if server_count is None:
+            print
+            print "%s:%d was not found!!!" % (options.host, starting + port)
+            print
+            continue
+
         print "%s:%d has still %d messages to process" % (options.host, starting + port, server_count['count'])
         count += server_count['count']
 
