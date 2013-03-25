@@ -80,7 +80,7 @@ def main(args=None):
     total_items = processed_items + ignored_items
     if total_items == 0:
         total_items = 1
-    print "Total %d processed items and %d ignored items (%.2f%%)." % (processed_items, ignored_items, (ignored_items / total_items * 100))
+    print "Total %d processed items and %d ignored items (%.2f%%)." % (processed_items, ignored_items, (float(ignored_items) / total_items * 100))
 
     print "Average sentry response time is %.2fms and 90%% Percentile is %.2fms" % (
         float(total_request_time) / number_of_servers_with_average,
