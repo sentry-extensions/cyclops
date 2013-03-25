@@ -91,13 +91,14 @@ class RouterHandler(BaseHandler):
         body = self.request.body
 
         message = (
+            project_id,
             self.request.method,
             headers,
             url,
             body
         )
 
-        self.application.items_to_process.put(msgpack.packb(message))
+        self.application.items_to_process[project_id].put(msgpack.packb(message))
 
         self.set_status(200)
         self.write("OK")
@@ -107,8 +108,9 @@ class RouterHandler(BaseHandler):
 class CountHandler(BaseHandler):
     @tornado.web.asynchronous
     def get(self):
+        total_count = sum([q.qsize() for key, q in self.application.items_to_process.iteritems()])
         result = {
-            'count': self.application.items_to_process.qsize(),
+            'count': total_count,
             'average': self.application.average_request_time,
             'percentile': self.application.percentile_request_time,
             'processed': self.application.processed_items,

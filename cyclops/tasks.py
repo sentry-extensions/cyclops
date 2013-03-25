@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import random
 import logging
 import Queue
 import time
@@ -51,21 +52,23 @@ class SendToSentryTask(object):
         )
         periodic_task.start()
 
-    def handle_request(self, response):
-        response_time = response.request_time
-        logging.debug("Request handled in %.2f" % response_time)
-        self.application.last_requests.append(response_time)
-        self.application.last_requests = self.application.last_requests[
-            max(0, len(self.application.last_requests) - self.application.config.MAX_REQUESTS_TO_AVERAGE):]
-        self.application.average_request_time = self.mean(self.application.last_requests) * 1000
-        self.application.percentile_request_time = self.calculate_percentile() * 1000
+    def get_handle_request(self, project_id):
+        def handle_request(response):
+            response_time = response.request_time
+            logging.debug("Request handled in %.2f" % response_time)
+            self.application.last_requests.append(response_time)
+            self.application.last_requests = self.application.last_requests[
+                max(0, len(self.application.last_requests) - self.application.config.MAX_REQUESTS_TO_AVERAGE):]
+            self.application.average_request_time = self.mean(self.application.last_requests) * 1000
+            self.application.percentile_request_time = self.calculate_percentile() * 1000
 
-        self.application.items_to_process.task_done()
+            self.application.items_to_process[project_id].task_done()
 
-        if response.error:
-            logging.error("Error: %s" % response.error)
-        else:
-            logging.debug("OK")
+            if response.error:
+                logging.error("Error: %s" % response.error)
+            else:
+                logging.debug("OK")
+        return handle_request
 
     def update(self):
         try:
@@ -85,7 +88,17 @@ class SendToSentryTask(object):
                     time.time() - self.last_sent < (self.application.percentile_request_time / 1000):
                 return
 
-            method, headers, url, body = msgpack.unpackb(self.application.items_to_process.get_nowait())
+            if not self.application.items_to_process.keys():
+                return
+
+            logging.debug(
+                "Getting a message at random from one of the available queues: [%s]" %
+                ", ".join([str(project_id) for project_id in self.application.items_to_process.keys()])
+            )
+
+            msg = self.application.items_to_process[random.choice(self.application.items_to_process.keys())].get_nowait()
+
+            project_id, method, headers, url, body = msgpack.unpackb(msg)
 
             request = HTTPRequest(url=url, headers=headers, method=method, body=body)
 
@@ -93,7 +106,7 @@ class SendToSentryTask(object):
             self.start_time = time.time()
             self.last_sent = time.time()
             http_client = AsyncHTTPClient(io_loop=self.main_loop)
-            http_client.fetch(request, self.handle_request)
+            http_client.fetch(request, self.get_handle_request(project_id))
         except Queue.Empty:
             pass
 
