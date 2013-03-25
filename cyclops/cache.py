@@ -35,6 +35,9 @@ class RedisCache(Cache):
     def get(self, key):
         return self.redis.get(key)
 
+    def incr(self, key):
+        return self.redis.incr(key)
+
     def set(self, key, expiration):
         self.lock = RedisLock(self.redis, lock_key='cyclops:lock:%s' % key, lock_timeout=5*60)
         if not self.lock.acquire():
@@ -44,7 +47,7 @@ class RedisCache(Cache):
             self.redis.setex(
                 key,
                 expiration,
-                "true"
+                0
             )
         finally:
             self.lock.release()
