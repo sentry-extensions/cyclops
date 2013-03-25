@@ -58,6 +58,8 @@ class SendToSentryTask(object):
         self.application.average_request_time = self.mean(self.application.last_requests) * 1000
         self.application.percentile_request_time = self.calculate_percentile() * 1000
 
+        self.application.items_to_process.task_done()
+
         if response.error:
             logging.error("Error: %s" % response.error)
         else:
@@ -90,7 +92,6 @@ class SendToSentryTask(object):
             self.last_sent = time.time()
             http_client = AsyncHTTPClient(io_loop=self.main_loop)
             http_client.fetch(request, self.handle_request)
-            self.application.items_to_process.task_done()
         except Queue.Empty:
             pass
 
