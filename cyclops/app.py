@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from Queue import Queue
+from Queue import Queue, LifoQueue
 
 import tornado.web
 from tornado.httpclient import AsyncHTTPClient
@@ -43,7 +43,12 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
     }
 
     self.project_keys = {}
-    self.items_to_process = Queue()
+
+    if self.config.PROCESS_NEWER_MESSAGES_FIRST:
+        self.items_to_process = LifoQueue()
+    else:
+        self.items_to_process = Queue()
+
     self.last_requests = []
     self.average_request_time = None
     self.percentile_request_time = None

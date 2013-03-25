@@ -8,6 +8,7 @@ MINUTES = 60
 Config.define('HEALTHCHECK_TEXT', 'WORKING', 'Cyclops has a /healthcheck route. This allows load balancers to ping it to see if the process is still alive. This option defines the text that the /healthcheck route prints.', 'General')
 Config.define('SENTRY_BASE_URL', 'localhost:9000', 'Sentry server name. This is the base URL that Cyclops will use to send requests to sentry.', 'General')
 Config.define('UPDATE_PERIOD', 2 * MINUTES, "Cyclops keeps sentry's projects public and security keys in memory. This allows a very fast validation as to whether each request is valid. This configuration defines the interval in seconds that Cyclops will update the keys.", 'General')
+Config.define('PROCESS_NEWER_MESSAGES_FIRST', True, "This configuration tells cyclops to process newly arrived error reports first. This is very useful to avoid that error bursts stop you from seeing new errors.", 'General')
 
 Config.define(
     'STORAGE',
