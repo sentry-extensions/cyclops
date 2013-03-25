@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Cyclops : Cyclops is meant to be a high performance barrier in front of Sentry (http://getsentry.com)." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Cyclops</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/heynemann/cyclops">View on GitHub</a>
+
+          <h1 id="project_title">Cyclops</h1>
+          <h2 id="project_tagline">Cyclops is meant to be a high performance barrier in front of Sentry (http://getsentry.com).</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/heynemann/cyclops/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/heynemann/cyclops/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p><img src="/logo.png" alt="Cyclops is meant to be a high performance barrier in front of [sentry](http://getsentry.com)"></p>
+
+<h1>Disclaimer</h1>
+
+<p>I am a huge fan of <a href="http://getsentry.com">sentry</a> and it has literally changed the level of quality of all my apps that use it, web or not.</p>
+
+<p>Huge props to the whole team behind it and to <a href="https://github.com/disqus" class="user-mention">@disqus</a> for releasing it to the public as open source, thus allowing us to better understand how it works.</p>
+
+<h1>The Issue</h1>
+
+<p>That said, if you have a volume of requests as large as we do (&gt; 5000 requests/second), a single Javascript error being tracked by <a href="http://getsentry.com">sentry</a> could bring our whole <a href="http://getsentry.com">sentry</a> farm down.</p>
+
+<p>We did some extensive Load Testing with <a href="http://getsentry.com">sentry</a> and the results will be available to everyone soon. It's just not viable for us to have <a href="http://getsentry.com">sentry</a> as the Front End to our error reporting.</p>
+
+<p>We needed something that could handle tens of thousands of error reporting requests per second, then send it to <a href="http://getsentry.com">sentry</a> in a rate that it can process.</p>
+
+<h1>Cyclops</h1>
+
+<p>Cyclops is a router of <a href="http://getsentry.com">sentry</a> error reporting requests. It receives error reports, keeps them in-memory (or any other storage you implement) and sends to your <a href="http://getsentry.com">sentry</a> backend in regular intervals.</p>
+
+<p>It takes into account the time your <a href="http://getsentry.com">sentry</a> backend is taking to service each request when calculating the interval with which to send the next request, thus making sure you don't flood your <a href="http://getsentry.com">sentry</a> backend.</p>
+
+<p>In our Load Testing, a server with 23 instances of Cyclops running handled more than 12 thousand requests per second.</p>
+
+<h1>Installing</h1>
+
+<p>Installing Cyclops is as easy as:</p>
+
+<pre><code>$ pip install cyclops
+</code></pre>
+
+<h1>Usage</h1>
+
+<p>Cyclops comes with a console app called 'cyclops' (pretty imaginative bunch, aren't we?).</p>
+
+<pre><code>$ cyclops --help
+usage: cyclops [-h] [--port PORT] [--bind BIND] [--conf CONF] [--verbose]
+             [--debug]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --port PORT, -p PORT  Port to start the server with.
+  --bind BIND, -b BIND  IP to bind the server to.
+  --conf CONF, -c CONF  Path to configuration file.
+  --verbose, -v         Log level: v=warning, vv=info, vvv=debug.
+  --debug, -d           Indicates whether to run tornado in debug mode.
+</code></pre>
+
+<p>The arguments are pretty explanatory. The key argument is the configuration file.</p>
+
+<h1>Configuration</h1>
+
+<p>The configuration file is where you tell Cyclops how to behave, how to store data, how to connect to <a href="http://getsentry.com">sentry</a>, etc.</p>
+
+<pre><code>################################### General ####################################
+
+## Cyclops has a /healthcheck route. This allows load balancers to ping it to see
+## if the process is still alive. This option defines the text that the
+## /healthcheck route prints.
+## Defaults to: WORKING
+#HEALTHCHECK_TEXT = 'WORKING'
+
+## [sentry](http://getsentry.com) server name. This is the base URL that Cyclops will use to send
+## requests to [sentry](http://getsentry.com).
+## Defaults to: localhost:9000
+#[sentry](http://getsentry.com)_BASE_URL = 'localhost:9000'
+
+## Cyclops keeps [sentry](http://getsentry.com)'s projects public and security keys in memory. This
+## allows a very fast validation as to whether each request is valid. This
+## configuration defines the interval in seconds that Cyclops will update the
+## keys.
+## Defaults to: 120
+#UPDATE_PERIOD = 120
+
+## The storage class used in Cyclops. Storage classes are what define how
+## received requests will be treated *before* sending to [sentry](http://getsentry.com). Inherits from
+## cyclops.storage.base.Storage. Built-ins: "cyclops.storage.memory" and
+## "cyclops.storage.redis."
+## Defaults to: cyclops.storage.memory
+#STORAGE = 'cyclops.storage.memory'
+
+################################################################################
+
+
+################################# Performance ##################################
+
+## Cyclops will try to send the errors it receives to [sentry](http://getsentry.com) as fast as possible.
+## This is done using a percentile average of 90% of the last [sentry](http://getsentry.com) requests
+## time. If those requests were serviced in 30ms average, then Cyclops will
+## keep sending requests every 30ms. This setting specify a maximum interval
+## in miliseconds to send requests to [sentry](http://getsentry.com).
+## Defaults to: 1000
+#MAX_DUMP_INTERVAL = 1000
+
+## In order to calculate the average requests, Cyclops keeps track of the times
+## of the last requests sent to [sentry](http://getsentry.com). This setting specifies the maximum
+## number of requests to average.
+## Defaults to: 5000
+#MAX_REQUESTS_TO_AVERAGE = 5000
+
+################################################################################
+
+
+################################### Database ###################################
+
+## Host of your [sentry](http://getsentry.com) installation MySQL database.
+## Defaults to: localhost
+#MYSQL_HOST = 'localhost'
+
+## Port of your [sentry](http://getsentry.com) installation MySQL database.
+## Defaults to: 3306
+#MYSQL_PORT = 3306
+
+## Database of your [sentry](http://getsentry.com) installation MySQL database.
+## Defaults to: [sentry](http://getsentry.com)
+#MYSQL_DB = '[sentry](http://getsentry.com)'
+
+## User of your [sentry](http://getsentry.com) installation MySQL database.
+## Defaults to: root
+#MYSQL_USER = 'root'
+
+## Password of your [sentry](http://getsentry.com) installation MySQL database.
+## Defaults to: 
+#MYSQL_PASS = ''
+
+################################################################################
+</code></pre>
+
+<h1>The Routes</h1>
+
+<p>Cyclops mymics the <code>api/store</code> routes in <a href="http://getsentry.com">sentry</a>. Both the <code>GET</code> and <code>POST</code> routes.</p>
+
+<p>You can send the errors to Cyclops in <em>EXACTLY</em> the same way you would send to <a href="http://getsentry.com">sentry</a>.</p>
+
+<p>There's one additional route, though: <code>/count</code>.</p>
+
+<p>This route returns a JSON object that tells you how that specific Cyclops instance is doing (how many messages to process, average and percentile response time).</p>
+
+<p>An example output of the <code>/count</code> route:</p>
+
+<pre><code>{
+count: 0,
+average: 77.491357729,
+percentile: 72.9767654253
+}
+</code></pre>
+
+<h1>cyclops-count</h1>
+
+<p>Using the <code>/count</code> route, we can keep track of the performance of individual Cyclops instances and of the load of each of them. It would be a tedious task to track the load and performance of each instance, though.</p>
+
+<p>Cyclops comes with a helper program that allows you to specify a server and a range of ports representing Cyclops instances, like this:</p>
+
+<pre><code>$ cyclops-count -b http://localhost -p 9000-9004
+</code></pre>
+
+<p>This command would return output similar to:</p>
+
+<pre><code>localhost:9000 has still 10 messages to process
+localhost:9001 has still 10 messages to process
+localhost:9002 has still 10 messages to process
+localhost:9003 has still 10 messages to process
+localhost:9004 has still 10 messages to process
+
+Total of 50 messages to send to [sentry](http://getsentry.com) from the farm at localhost.
+
+Average [sentry](http://getsentry.com) response time is 2918.66ms and 90% Percentile is 2339.53ms
+</code></pre>
+
+<p>This way you can keep track of how your farm is doing <em>A LOT</em> easier.</p>
+
+<h1>Hosting</h1>
+
+<p>The way we are hosting Cyclops is pretty standard.</p>
+
+<p>We have a <a href="http://supervisord.org/">supervisor</a> instance that starts 24 instances of Cyclops in ports ranging from 9100 to 9123.</p>
+
+<p>We then use NGinx to load-balance traffic to them, and use the NGinx port to send <a href="http://getsentry.com">sentry</a> traffic to. If anyone is interested in a sample configuration for both supervisor and NGinx, just create an issue.</p>
+
+<h1>Contributing</h1>
+
+<p>If you wish to contribute to Cyclops, file and issue or send us a pull request.</p>
+
+<h1>License</h1>
+
+<p>Cyclops is licensed under the MIT License:</p>
+
+<p>The MIT License</p>
+
+<p>Copyright (c) 2013 Bernardo Heynemann <a href="mailto:heynemann@gmail.com">heynemann@gmail.com</a></p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Cyclops maintained by <a href="https://github.com/heynemann">heynemann</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-39582311-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
