@@ -7,12 +7,12 @@ MINUTES = 60
 
 Config.define('HEALTHCHECK_TEXT', 'WORKING', 'Cyclops has a /healthcheck route. This allows load balancers to ping it to see if the process is still alive. This option defines the text that the /healthcheck route prints.', 'General')
 Config.define('SENTRY_BASE_URL', 'localhost:9000', 'Sentry server name. This is the base URL that Cyclops will use to send requests to sentry.', 'General')
-Config.define('UPDATE_PERIOD', 2 * MINUTES, "Cyclops keeps sentry's projects public and security keys in memory. This allows a very fast validation as to whether each request is valid. This configuration defines the interval in seconds that cyclops will update the keys.", 'General')
+Config.define('UPDATE_PERIOD', 2 * MINUTES, "Cyclops keeps sentry's projects public and security keys in memory. This allows a very fast validation as to whether each request is valid. This configuration defines the interval in seconds that Cyclops will update the keys.", 'General')
 
 Config.define(
     'STORAGE',
     'cyclops.storage.memory',
-    'The storage class used in cyclops. Storage classes are what define how received requests will be treated *before* sending to sentry. Inherits from cyclops.storage.base.Storage. ' +
+    'The storage class used in Cyclops. Storage classes are what define how received requests will be treated *before* sending to sentry. Inherits from cyclops.storage.base.Storage. ' +
     'Built-ins: "cyclops.storage.memory" and "cyclops.storage.redis."',
     'General'
 )

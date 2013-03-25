@@ -1,4 +1,4 @@
-cyclops
+Cyclops
 =======
 
 Cyclops is meant to be a high performance barrier in front of Sentry (http://getsentry.com).
@@ -26,12 +26,12 @@ Cyclops is a router of sentry error reporting requests. It receives error report
 
 It takes into account the time your sentry backend is taking to service each request when calculating the interval with which to send the next request, thus making sure you don't flood your sentry backend.
 
-In our Load Testing, a server with 23 instances of cyclops running handled more than 12 thousand requests per second.
+In our Load Testing, a server with 23 instances of Cyclops running handled more than 12 thousand requests per second.
 
 Installing
 ==========
 
-Installing cyclops is as easy as:
+Installing Cyclops is as easy as:
 
     $ pip install cyclops
 
@@ -57,7 +57,7 @@ The arguments are pretty explanatory. The key argument is the configuration file
 Configuration
 =============
 
-The configuration file is where you tell cyclops how to behave, how to store data, how to connect to sentry, etc.
+The configuration file is where you tell Cyclops how to behave, how to store data, how to connect to sentry, etc.
 
     ################################### General ####################################
 
@@ -74,12 +74,12 @@ The configuration file is where you tell cyclops how to behave, how to store dat
 
     ## Cyclops keeps sentry's projects public and security keys in memory. This
     ## allows a very fast validation as to whether each request is valid. This
-    ## configuration defines the interval in seconds that cyclops will update the
+    ## configuration defines the interval in seconds that Cyclops will update the
     ## keys.
     ## Defaults to: 120
     #UPDATE_PERIOD = 120
 
-    ## The storage class used in cyclops. Storage classes are what define how
+    ## The storage class used in Cyclops. Storage classes are what define how
     ## received requests will be treated *before* sending to sentry. Inherits from
     ## cyclops.storage.base.Storage. Built-ins: "cyclops.storage.memory" and
     ## "cyclops.storage.redis."
@@ -93,7 +93,7 @@ The configuration file is where you tell cyclops how to behave, how to store dat
 
     ## Cyclops will try to send the errors it receives to sentry as fast as possible.
     ## This is done using a percentile average of 90% of the last sentry requests
-    ## time. If those requests were serviced in 30ms average, then cyclops will
+    ## time. If those requests were serviced in 30ms average, then Cyclops will
     ## keep sending requests every 30ms. This setting specify a maximum interval
     ## in miliseconds to send requests to sentry.
     ## Defaults to: 1000
