@@ -29,13 +29,21 @@ class ProjectsUpdateTask(object):
         query = "select project_id, public_key, secret_key from sentry_projectkey"
         logging.info("Executing query %s in MySQL" % query)
 
+        projects = {}
+
         for project in self.db.query(query):
             logging.info("Updating information for project with id %s..." % project.project_id)
-            self.application.project_keys[project.project_id] = {
-                "public_key": project.public_key,
-                "secret_key": project.secret_key
-            }
 
+            if not project.project_id in projects.keys():
+                projects[project.project_id] = {
+                    "public_key": [],
+                    "secret_key": []
+                }
+
+            projects[project.project_id]['public_key'].append(project.public_key)
+            projects[project.project_id]['secret_key'].append(project.secret_key)
+
+        self.application.project_keys = projects
 
 class SendToSentryTask(object):
     def __init__(self, application, main_loop):
