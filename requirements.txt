@@ -6,3 +6,5 @@ requests
 ujson
 msgpack-python
 redis-lock
+MySQL-python
+redis
