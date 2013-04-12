@@ -33,14 +33,15 @@ It keeps items in memory and dumps them at sentry in regular intervals.
     zip_safe=False,
 
     install_requires=[
-        'tornado',
-        'torndb',
-        'derpconf',
-        'pycurl',
-        'requests',
-        'ujson',
-        'msgpack-python',
-        'redis-lock'
+        'tornado==2.4.1',
+        'torndb==0.1',
+        'derpconf==0.3.3',
+        'pycurl==7.19.0',
+        'requests==1.1.0',
+        'ujson==1.30',
+        'msgpack-python==0.3.0',
+        'redis==2.7.2',
+        'redis-lock==0.2.0'
     ],
 
     entry_points={
