@@ -29,7 +29,7 @@ class RouterHandler(BaseHandler):
         project_id = int(project_id)
 
         sentry_key = self.get_argument('sentry_key')
-        if sentry_key.strip() != self.application.project_keys[project_id]["public_key"]:
+        if not sentry_key.strip() in self.application.project_keys[project_id]["public_key"]:
             self.set_status(403)
             self.write("INVALID KEY")
             self.finish()
@@ -75,7 +75,7 @@ class RouterHandler(BaseHandler):
 
         project_id = None
         for _project_id, keys in self.application.project_keys.iteritems():
-            if keys['public_key'] == sentry_key and keys['secret_key'] == sentry_secret:
+            if sentry_key in keys['public_key'] and sentry_secret in keys['secret_key']:
                 project_id = _project_id
                 break
 
