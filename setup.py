@@ -41,7 +41,8 @@ It keeps items in memory and dumps them at sentry in regular intervals.
         'ujson==1.30',
         'msgpack-python==0.3.0',
         'redis==2.7.2',
-        'redis-lock==0.2.0'
+        'redis-lock==0.2.0',
+        'argparse==1.2.1'
     ],
 
     entry_points={

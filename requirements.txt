@@ -11,3 +11,4 @@ MySQL-python==1.2.3
 nose
 coverage
 yanc
+argparse==1.2.1
