@@ -1,6 +1,9 @@
 test:
 	@nosetests -vv --pdb --pdb-failures --with-yanc -s --with-coverage --cover-erase --cover-inclusive --cover-package=cyclops tests/
 
+ci-test:
+	@nosetests -vv --with-yanc -s --with-coverage --cover-erase --cover-inclusive --cover-package=cyclops tests/
+
 run:
 	@python cyclops/server.py -vv
 
