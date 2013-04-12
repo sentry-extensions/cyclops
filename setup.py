@@ -33,7 +33,7 @@ It keeps items in memory and dumps them at sentry in regular intervals.
     zip_safe=False,
 
     install_requires=[
-        'tornado==2.4.1',
+        'tornado==3.0.1',
         'torndb==0.1',
         'derpconf==0.3.3',
         'pycurl==7.19.0',

@@ -1,4 +1,4 @@
-tornado==2.4.1
+tornado==3.0.1
 torndb==0.1
 derpconf==0.3.3
 pycurl==7.19.0
@@ -8,3 +8,6 @@ msgpack-python==0.3.0
 redis==2.7.2
 redis-lock==0.2.0
 MySQL-python==1.2.3
+nose
+coverage
+yanc
