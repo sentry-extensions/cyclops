@@ -12,3 +12,4 @@ nose
 coverage
 yanc
 argparse==1.2.1
+preggy
