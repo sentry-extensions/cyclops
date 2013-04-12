@@ -1,0 +1,25 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+  - "3.3.1"
+
+install:
+    # weird travis-ci python paths
+    - export PYTHONPATH=$PYTHONPATH:/usr/lib/pymodules/python2.7/
+    - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages
+    - export PYTHONPATH=$PYTHONPATH:/usr/lib/pyshared/python2.7/
+    - export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.7/site-packages/
+
+    # install python requirements
+    - pip install -r requirements.txt --use-mirrors
+
+script:
+    # weird travis-ci python paths
+    - export PYTHONPATH=$PYTHONPATH:/usr/lib/pymodules/python2.7/
+    - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages
+    - export PYTHONPATH=$PYTHONPATH:/usr/lib/pyshared/python2.7/
+    - export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.7/site-packages/
+
+    # finally run tests
+    - make test
