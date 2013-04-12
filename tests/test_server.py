@@ -12,12 +12,11 @@ def test_server_logs_values():
     expect(LOGS).to_include(0)
     expect(LOGS[0]).to_equal("error")
 
-    #LOGS = {
-        #0: 'error',
-        #1: 'warning',
-        #2: 'info',
-        #3: 'debug'
-    #}
+    expect(LOGS).to_include(1)
+    expect(LOGS[1]).to_equal("warning")
 
+    expect(LOGS).to_include(2)
+    expect(LOGS[2]).to_equal("info")
 
-    #assert True
+    expect(LOGS).to_include(3)
+    expect(LOGS[3]).to_equal("debug")
