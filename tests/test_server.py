@@ -146,3 +146,16 @@ def test_main_with_port_and_bind():
     expect(FakeServer.called_with['ip']).to_equal("1.2.3.4")
 
     forget()
+
+
+def test_main_with_custom_config():
+    working_text = "GNIKROW"
+    argv = ['--conf', './tests/test.conf']
+    main_loop = FakeLoop()
+
+    main(args=argv, main_loop=main_loop, app=App, server_impl=FakeServer)
+
+    expect(App.called_with).to_include('config')
+    expect(App.called_with['config'].HEALTHCHECK_TEXT).to_equal(working_text)
+
+    forget()
