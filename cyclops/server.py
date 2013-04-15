@@ -24,7 +24,7 @@ ROOT_PATH = abspath(join(dirname(__file__), '..'))
 DEFAULT_CONFIG_PATH = join(ROOT_PATH, 'cyclops', 'local.conf')
 
 
-def main(args=None):
+def main(args=None, main_loop=None, app=None, server_impl=None):
     if args is None:
         args = sys.argv[1:]
 
@@ -60,17 +60,23 @@ def main(args=None):
 
     logging.info("Using configuration file at {0}.".format(config.config_file))
 
-    main_loop = tornado.ioloop.IOLoop.instance()
+    if main_loop is None:
+        main_loop = tornado.ioloop.IOLoop.instance()
 
-    application = CyclopsApp(config, log_level, options.debug, main_loop)
-    server = HTTPServer(application, xheaders=True)
+    if app is None:
+        app = CyclopsApp
+    application = app(config, log_level, options.debug, main_loop)
+
+    if server_impl is None:
+        server_impl = HTTPServer
+    server = server_impl(application, xheaders=True)
 
     server.bind(options.port, options.bind)
     server.start(1)
 
     logging.info('-- Cyclops started listening in %s:%d --' % (options.bind, options.port))
     try:
-        tornado.ioloop.IOLoop.instance().start()
+        main_loop.start()
     except KeyboardInterrupt:
         logging.info('')
         logging.info('-- Cyclops closed by user interruption --')
