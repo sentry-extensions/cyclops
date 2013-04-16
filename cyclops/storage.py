@@ -6,6 +6,7 @@ from collections import defaultdict
 import random
 
 import msgpack
+import redis
 
 
 class InMemoryStorage(object):
@@ -47,38 +48,69 @@ class InMemoryStorage(object):
         return [str(project_id) for project_id in self.items_to_process.keys()]
 
 
-#class RedisCache(Cache):
-    #def __init__(self, application):
-        #super(RedisCache, self).__init__(application)
+class RedisStorage(object):
+    def __init__(self, application):
+        self.application = application
 
-        #if self.application.config.REDIS_HOST is not None:
-            #self.redis = redis.StrictRedis(
-                #host=self.application.config.REDIS_HOST,
-                #port=self.application.config.REDIS_PORT,
-                #db=self.application.config.REDIS_DB_COUNT,
-                #password=self.application.config.REDIS_PASSWORD
-            #)
+        if self.application.config.REDIS_HOST is None:
+            raise RuntimeError(
+                "If you are using RedisStorage you need to set in your configuration file the " +
+                "following keys: REDIS_HOST, REDIS_PORT, REDIS_DB_COUNT and REDIS_PASSWORD(optional)"
+            )
 
-    #def get(self, key):
-        #value = self.redis.get(key)
-        #if value is None:
-            #return None
+        self.redis = redis.StrictRedis(
+            host=self.application.config.REDIS_HOST,
+            port=self.application.config.REDIS_PORT,
+            db=self.application.config.REDIS_DB_COUNT,
+            password=self.application.config.REDIS_PASSWORD
+        )
 
-        #return int(value)
+    @property
+    def projects_key(self):
+        return "cyclops:projects"
 
-    #def incr(self, key):
-        #return self.redis.incr(key)
+    def get_queue_key(self, project_id):
+        return "cyclops:queue:%s" % project_id
 
-    #def set(self, key, expiration):
-        #self.lock = RedisLock(self.redis, lock_key='cyclops:lock:%s' % key, lock_timeout=5*60)
-        #if not self.lock.acquire():
-            #return
+    def clear(self):
+        for project_id in self.get_projects():
+            self.redis.delete(self.get_queue_key(project_id))
+        self.redis.delete(self.projects_key)
 
-        #try:
-            #self.redis.setex(
-                #key,
-                #expiration,
-                #0
-            #)
-        #finally:
-            #self.lock.release()
+    def get_projects(self):
+        projects = self.redis.smembers(self.projects_key)
+        if not projects:
+            return []
+
+        return projects
+
+    def put(self, project_id, message):
+        self.redis.sadd(self.projects_key, project_id)
+        self.redis.rpush(self.get_queue_key(project_id), msgpack.packb(message))
+
+    def get_size(self, project_id):
+        key = self.get_queue_key(project_id)
+        return self.redis.llen(key)
+
+    def get_next_message(self):
+        projects = list(self.redis.smembers(self.projects_key))
+        if not projects:
+            return None
+
+        project_id = random.choice(projects)
+        msg = self.redis.rpop(self.get_queue_key(project_id))
+        if not msg:
+            return None
+
+        return msgpack.unpackb(msg)
+
+    def mark_as_done(self, project_id):
+        pass  # no need to do anything in Redis
+
+    @property
+    def total_size(self):
+        return sum([self.redis.llen(self.get_queue_key(project_id)) for project_id in self.get_projects()])
+
+    @property
+    def available_queues(self):
+        return [str(project_id) for project_id in self.get_projects()]
