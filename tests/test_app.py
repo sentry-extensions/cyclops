@@ -11,15 +11,15 @@ from torndb import Connection
 from tornado.ioloop import IOLoop
 from tornado.testing import AsyncHTTPTestCase
 
-from cyclops.app import get_cache, configure_app, CyclopsApp
+from cyclops.app import get_class, configure_app, CyclopsApp
 from cyclops.cache import RedisCache
 from cyclops.config import Config
 from tests.helpers import FakeLoop, App, forget
 
 
-def test_get_cache():
-    expect(get_cache('os')).to_equal(os)
-    expect(get_cache('os.path')).to_equal(os.path)
+def test_get_class():
+    expect(get_class('os')).to_equal(os)
+    expect(get_class('os.path')).to_equal(os.path)
 
 
 def test_configure_app():

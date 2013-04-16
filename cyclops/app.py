@@ -15,7 +15,7 @@ from cyclops.handlers.healthcheck import HealthCheckHandler
 from cyclops.tasks import ProjectsUpdateTask, SendToSentryTask
 
 
-def get_cache(module_name):
+def get_class(module_name):
     if '.' not in module_name:
         return __import__(module_name)
 
@@ -48,7 +48,7 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
         password=self.config.MYSQL_PASS
     )
 
-    cache_class = get_cache(self.config.CACHE_IMPLEMENTATION_CLASS)
+    cache_class = get_class(self.config.CACHE_IMPLEMENTATION_CLASS)
     self.cache = cache_class(self)
 
     options = {}
