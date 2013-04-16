@@ -16,11 +16,10 @@ from cyclops.tasks import ProjectsUpdateTask, SendToSentryTask
 
 
 def get_cache(module_name):
-    if '.' in module_name:
-        modules = module_name.split('.')
-    else:
-        modules = [module_name]
+    if '.' not in module_name:
+        return __import__(module_name)
 
+    modules = module_name.split('.')
     return reduce(getattr, modules[1:], __import__(".".join(modules[:-1])))
 
 

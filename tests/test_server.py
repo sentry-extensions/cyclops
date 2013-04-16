@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-_multiprocess_can_split_ = True
-
 from os.path import abspath, join, dirname
 
 from preggy import expect
 
 from cyclops.server import LOGS, ROOT_PATH, DEFAULT_CONFIG_PATH, main
+from tests.helpers import FakeLoop, FakeServer, App, forget
 
 EXPECTED_ROOT_PATH = abspath(join(dirname(__file__), '..'))
 EXPECTED_DEFAULT_CONFIG_PATH = join(ROOT_PATH, 'cyclops', 'local.conf')
@@ -30,62 +29,6 @@ def test_server_logs_values():
 def test_paths():
     expect(ROOT_PATH).to_equal(EXPECTED_ROOT_PATH)
     expect(DEFAULT_CONFIG_PATH).to_equal(EXPECTED_DEFAULT_CONFIG_PATH)
-
-
-class FakeLoop(object):
-    def __init__(self):
-        self.started = False
-
-    def start(self):
-        self.started = True
-
-
-class FakeServer(object):
-    called_with = {}
-
-    def __init__(self, application, xheaders):
-        self.application = application
-        self.xheaders = xheaders
-
-        FakeServer.called_with['application'] = application
-        FakeServer.called_with['xheaders'] = xheaders
-
-    @classmethod
-    def forget(cls):
-        FakeServer.called_with = {}
-
-    def bind(self, port, ip):
-        self.port = port
-        self.ip = ip
-        self.called_with['port'] = port
-        self.called_with['ip'] = ip
-
-    def start(self, procs):
-        FakeServer.called_with['procs'] = procs
-
-
-class App(object):
-    called_with = {}
-
-    def __init__(self, config, log_level, debug, main_loop):
-        self.config = config
-        self.log_level = log_level
-        self.debug = debug
-        self.main_loop = main_loop
-
-        App.called_with['config'] = config
-        App.called_with['log_level'] = log_level
-        App.called_with['debug'] = debug
-        App.called_with['main_loop'] = main_loop
-
-    @classmethod
-    def forget(cls):
-        App.called_with = {}
-
-
-def forget():
-    App.forget()
-    FakeServer.forget()
 
 
 def test_main_works_as_expected():
