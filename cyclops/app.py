@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from Queue import Queue, LifoQueue
-from collections import defaultdict
+#from Queue import Queue, LifoQueue
+#from collections import defaultdict
 
 import tornado.web
 from tornado.httpclient import AsyncHTTPClient
@@ -51,6 +51,9 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
     cache_class = get_class(self.config.CACHE_IMPLEMENTATION_CLASS)
     self.cache = cache_class(self)
 
+    storage_class = get_class(self.config.STORAGE)
+    self.storage = storage_class(self)
+
     options = {}
 
     self.project_keys = {}
@@ -58,10 +61,10 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
     self.processed_items = 0
     self.ignored_items = 0
 
-    if self.config.PROCESS_NEWER_MESSAGES_FIRST:
-        self.items_to_process = defaultdict(LifoQueue)
-    else:
-        self.items_to_process = defaultdict(Queue)
+    #if self.config.PROCESS_NEWER_MESSAGES_FIRST:
+        #self.items_to_process = defaultdict(LifoQueue)
+    #else:
+        #self.items_to_process = defaultdict(Queue)
 
     self.last_requests = []
     self.average_request_time = None

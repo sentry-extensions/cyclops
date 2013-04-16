@@ -12,9 +12,9 @@ Config.define('PROCESS_NEWER_MESSAGES_FIRST', True, "This configuration tells cy
 
 Config.define(
     'STORAGE',
-    'cyclops.storage.memory',
-    'The storage class used in Cyclops. Storage classes are what define how received requests will be treated *before* sending to sentry. Inherits from cyclops.storage.base.Storage. ' +
-    'Built-ins: "cyclops.storage.memory" and "cyclops.storage.redis."',
+    'cyclops.storage.InMemoryStorage',
+    'The storage class used in Cyclops. Storage classes are what define how received requests will be treated *before* sending to sentry. ' +
+    'Built-ins: "cyclops.storage.InMemoryStorage" and "cyclops.storage.RedisStorage."',
     'General'
 )
 

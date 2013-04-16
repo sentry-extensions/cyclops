@@ -45,6 +45,7 @@ class ProjectsUpdateTask(object):
 
         self.application.project_keys = projects
 
+
 class SendToSentryTask(object):
     def __init__(self, application, main_loop):
         self.application = application
@@ -70,7 +71,8 @@ class SendToSentryTask(object):
             self.application.average_request_time = self.mean(self.application.last_requests) * 1000
             self.application.percentile_request_time = self.calculate_percentile() * 1000
 
-            self.application.items_to_process[project_id].task_done()
+            self.application.storage.mark_as_done(project_id)
+            #self.application.items_to_process[project_id].task_done()
 
             if response.error:
                 logging.error("Error: %s" % response.error)
@@ -96,17 +98,20 @@ class SendToSentryTask(object):
                     time.time() - self.last_sent < (self.application.percentile_request_time / 1000):
                 return
 
-            if not self.application.items_to_process.keys():
+            #if not self.application.items_to_process.keys():
+            if not self.application.storage.total_size:
                 return
 
             logging.debug(
                 "Getting a message at random from one of the available queues: [%s]" %
-                ", ".join([str(project_id) for project_id in self.application.items_to_process.keys()])
+                ", ".join(self.application.storage.available_queues)
             )
 
-            msg = self.application.items_to_process[random.choice(self.application.items_to_process.keys())].get_nowait()
+            msg = self.application.storage.get_next_message()
+            #msg = self.application.items_to_process[random.choice(self.application.items_to_process.keys())].get_nowait()
 
-            project_id, method, headers, url, body = msgpack.unpackb(msg)
+            #project_id, method, headers, url, body = msgpack.unpackb(msg)
+            project_id, method, headers, url, body = msg
 
             request = HTTPRequest(url=url, headers=headers, method=method, body=body)
 

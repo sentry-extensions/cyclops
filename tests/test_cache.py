@@ -5,13 +5,12 @@ import os
 
 from preggy import expect
 
-from cyclops.config import Config
 from cyclops.cache import Cache, NoCache, RedisCache
-from tests.helpers import App
+from tests.helpers import App, get_config
 
 
 def get_app():
-    cfg = Config(REDIS_HOST='localhost', REDIS_PORT=7780, REDIS_DB_COUNT=0, REDIS_PASSWORD=None)
+    cfg = get_config(REDIS_HOST='localhost', REDIS_PORT=7780, REDIS_DB_COUNT=0, REDIS_PASSWORD=None)
     return App(config=cfg)
 
 

@@ -1,8 +1,13 @@
-test: redis
-	@nosetests -vv --pdb --pdb-failures --with-yanc -s --with-coverage --cover-erase --cover-inclusive --cover-package=cyclops tests/
-
-ci-test: redis
+test: redis db
 	@nosetests -vv --with-yanc -s --with-coverage --cover-erase --cover-inclusive --cover-package=cyclops tests/
+
+ci-test: redis db
+	@nosetests -vv --with-yanc -s --with-coverage --cover-erase --cover-inclusive --cover-package=cyclops tests/
+
+db:
+	@mysql -u root -e "DROP DATABASE IF EXISTS sentry_tests"
+	@mysql -u root -e "CREATE DATABASE IF NOT EXISTS sentry_tests"
+	@mysql -u root sentry_tests < tests/sentry_db.sql
 
 run:
 	@python cyclops/server.py -vv

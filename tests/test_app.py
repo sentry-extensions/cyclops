@@ -12,9 +12,9 @@ from tornado.ioloop import IOLoop
 from tornado.testing import AsyncHTTPTestCase
 
 from cyclops.app import get_class, configure_app, CyclopsApp
+from cyclops.storage import InMemoryStorage
 from cyclops.cache import RedisCache
-from cyclops.config import Config
-from tests.helpers import FakeLoop, App, forget
+from tests.helpers import FakeLoop, App, forget, get_config
 
 
 def test_get_class():
@@ -24,7 +24,7 @@ def test_get_class():
 
 def test_configure_app():
     app = App()
-    cfg = Config()
+    cfg = get_config()
 
     loop = FakeLoop()
     handlers, options = configure_app(app, config=cfg, log_level='WARNING', debug=True, main_loop=loop)
@@ -39,18 +39,20 @@ def test_configure_app():
     expect(handlers[3].name).to_equal('healthcheck')
 
     expect(app.db).to_be_instance_of(Connection)
-    expect(app.db.database).to_equal('sentry')
+    expect(app.db.database).to_equal('sentry_tests')
 
     expect(app.cache).to_be_instance_of(RedisCache)
     expect(app.cache.application).to_equal(app)
+
+    expect(app.storage).to_be_instance_of(InMemoryStorage)
+    expect(app.storage.application).to_equal(app)
+    expect(app.storage.items_to_process).to_be_instance_of(defaultdict)
+    expect(app.storage.items_to_process.default_factory).to_equal(LifoQueue)
 
     expect(app.project_keys).to_length(1)
 
     expect(app.processed_items).to_equal(0)
     expect(app.ignored_items).to_equal(0)
-
-    expect(app.items_to_process).to_be_instance_of(defaultdict)
-    expect(app.items_to_process.default_factory).to_equal(LifoQueue)
 
     expect(app.last_requests).to_be_empty()
 
@@ -67,20 +69,20 @@ def test_configure_app():
 
 def test_configure_app_to_FifoQueue():
     app = App()
-    cfg = Config(PROCESS_NEWER_MESSAGES_FIRST=False)
+    cfg = get_config(PROCESS_NEWER_MESSAGES_FIRST=False)
 
     loop = FakeLoop()
     handlers, options = configure_app(app, config=cfg, log_level='WARNING', debug=True, main_loop=loop)
 
-    expect(app.items_to_process).to_be_instance_of(defaultdict)
-    expect(app.items_to_process.default_factory).to_equal(Queue)
+    expect(app.storage.items_to_process).to_be_instance_of(defaultdict)
+    expect(app.storage.items_to_process.default_factory).to_equal(Queue)
 
     forget()
 
 
 class TestCyclopsApp(AsyncHTTPTestCase):
     def get_app(self):
-        cfg = Config()
+        cfg = get_config()
         return CyclopsApp(config=cfg, main_loop=IOLoop.current())
 
     def test_healthcheck(self):

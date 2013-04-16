@@ -9,7 +9,7 @@ from tornado.testing import AsyncHTTPTestCase
 import msgpack
 
 from cyclops.app import CyclopsApp
-from cyclops.config import Config
+from tests.helpers import get_config
 
 
 def get_sentry_auth(key, secret):
@@ -49,7 +49,7 @@ def get_post_payload(
 
 class TestGetRouterHandler(AsyncHTTPTestCase):
     def get_app(self):
-        cfg = Config(
+        cfg = get_config(
             CACHE_IMPLEMENTATION_CLASS='cyclops.cache.RedisCache',
             REDIS_HOST='localhost',
             REDIS_PORT=7780,
@@ -84,9 +84,9 @@ class TestGetRouterHandler(AsyncHTTPTestCase):
 
         expect(self.app.processed_items).to_equal(1)
 
-        expect(self.app.items_to_process[item]).to_length(1)
+        expect(self.app.storage.get_size(item)).to_equal(1)
 
-        project_id, method, headers, url, body = msgpack.unpackb(self.app.items_to_process[item].get())
+        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
         expect(project_id).to_equal(item)
         expect(method).to_equal("GET")
 
@@ -116,7 +116,7 @@ class TestGetRouterHandler(AsyncHTTPTestCase):
 
 class TestPostRouterHandler(AsyncHTTPTestCase):
     def get_app(self):
-        cfg = Config(
+        cfg = get_config(
             CACHE_IMPLEMENTATION_CLASS='cyclops.cache.RedisCache',
             REDIS_HOST='localhost',
             REDIS_PORT=7780,
@@ -195,9 +195,9 @@ class TestPostRouterHandler(AsyncHTTPTestCase):
 
         expect(self.app.processed_items).to_equal(1)
 
-        expect(self.app.items_to_process[item]).to_length(1)
+        expect(self.app.storage.get_size(item)).to_equal(1)
 
-        project_id, method, headers, url, body = msgpack.unpackb(self.app.items_to_process[item].get())
+        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
         expect(project_id).to_equal(item)
         expect(method).to_equal("POST")
 
@@ -235,7 +235,7 @@ class TestPostRouterHandler(AsyncHTTPTestCase):
 
 class TestCountHandler(AsyncHTTPTestCase):
     def get_app(self):
-        cfg = Config(
+        cfg = get_config(
             CACHE_IMPLEMENTATION_CLASS='cyclops.cache.RedisCache',
             REDIS_HOST='localhost',
             REDIS_PORT=7780,

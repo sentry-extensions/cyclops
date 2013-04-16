@@ -5,7 +5,7 @@ import re
 
 import tornado.web
 from ujson import dumps, loads
-import msgpack
+#import msgpack
 
 from cyclops.handlers.base import BaseHandler
 
@@ -49,7 +49,8 @@ class BaseRouterHandler(BaseHandler):
             body
         )
 
-        self.application.items_to_process[project_id].put(msgpack.packb(message))
+        self.application.storage.put(project_id, message)
+        #self.application.items_to_process[project_id].put(msgpack.packb(message))
 
         self.set_status(200)
         self.write("OK")
@@ -133,7 +134,7 @@ class PostRouterHandler(BaseRouterHandler):
 class CountHandler(BaseHandler):
     @tornado.web.asynchronous
     def get(self):
-        total_count = sum([q.qsize() for key, q in self.application.items_to_process.iteritems()])
+        total_count = self.application.storage.total_size
         result = {
             'count': total_count,
             'average': self.application.average_request_time,

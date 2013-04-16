@@ -3,6 +3,8 @@
 
 import time
 
+from cyclops.config import Config
+
 
 class FakeLoop(object):
     def __init__(self):
@@ -65,3 +67,11 @@ class App(object):
 def forget():
     App.forget()
     FakeServer.forget()
+
+
+def get_config(*args, **kw):
+    if not kw:
+        kw = {}
+    kw['MYSQL_DB'] = 'sentry_tests'
+
+    return Config(**kw)
