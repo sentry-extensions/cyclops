@@ -59,3 +59,18 @@ class TestRouterHandler(AsyncHTTPTestCase):
 
         expect(url).to_equal("localhost:9000/api/1/store/?sentry_key=ee0c9d854b294d20a2d6d92d0191cac8")
         expect(body).to_be_empty()
+
+    def test_get_valid_project_with_valid_key_ignores(self):
+        item = self.app.project_keys.keys()[0]
+        key = self.app.project_keys[item]['public_key'][0]
+
+        for i in range(self.app.config.MAX_CACHE_USES + 1):
+            response = self.fetch('/api/%s/store/?sentry_key=%s' % (item, key))
+
+        expect(response.code).to_equal(304)
+        expect(response.body).to_be_empty()
+
+        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
+        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("12")
+        expect(response.headers).to_include("X-CYCLOPS-STATUS")
+        expect(response.headers['X-CYCLOPS-STATUS']).to_equal("IGNORED")

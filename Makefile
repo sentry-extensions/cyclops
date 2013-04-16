@@ -1,7 +1,7 @@
 test: redis
 	@nosetests -vv --pdb --pdb-failures --with-yanc -s --with-coverage --cover-erase --cover-inclusive --cover-package=cyclops tests/
 
-ci-test:
+ci-test: redis
 	@nosetests -vv --with-yanc -s --with-coverage --cover-erase --cover-inclusive --cover-package=cyclops tests/
 
 run:
