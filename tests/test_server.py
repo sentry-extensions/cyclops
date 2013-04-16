@@ -4,12 +4,17 @@
 from os.path import abspath, join, dirname
 
 from preggy import expect
+from tornado.ioloop import IOLoop
 
-from cyclops.server import LOGS, ROOT_PATH, DEFAULT_CONFIG_PATH, main
+from cyclops.server import LOGS, ROOT_PATH, DEFAULT_CONFIG_PATH, main, get_ioloop
 from tests.helpers import FakeLoop, FakeServer, App, forget
 
 EXPECTED_ROOT_PATH = abspath(join(dirname(__file__), '..'))
 EXPECTED_DEFAULT_CONFIG_PATH = join(ROOT_PATH, 'cyclops', 'local.conf')
+
+
+def test_get_ioloop():
+    expect(get_ioloop()).to_equal(IOLoop.current())
 
 
 def test_server_logs_values():
@@ -100,5 +105,21 @@ def test_main_with_custom_config():
 
     expect(App.called_with).to_include('config')
     expect(App.called_with['config'].HEALTHCHECK_TEXT).to_equal(working_text)
+
+    forget()
+
+
+def get_fake_ioloop(loop):
+    def get_loop():
+        return loop
+
+    return get_loop
+
+
+def test_main_with_no_ioloop():
+    argv = []
+    loop = FakeLoop()
+
+    main(args=argv, main_loop=None, app=App, server_impl=FakeServer, get_ioloop=get_fake_ioloop(loop))
 
     forget()

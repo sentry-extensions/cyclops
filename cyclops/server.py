@@ -24,7 +24,11 @@ ROOT_PATH = abspath(join(dirname(__file__), '..'))
 DEFAULT_CONFIG_PATH = join(ROOT_PATH, 'cyclops', 'local.conf')
 
 
-def main(args=None, main_loop=None, app=None, server_impl=None):
+def get_ioloop():
+    return tornado.ioloop.IOLoop.current()
+
+
+def main(args=None, main_loop=None, app=CyclopsApp, server_impl=HTTPServer, get_ioloop=get_ioloop):
     if args is None:
         args = sys.argv[1:]
 
@@ -61,14 +65,10 @@ def main(args=None, main_loop=None, app=None, server_impl=None):
     logging.info("Using configuration file at {0}.".format(config.config_file))
 
     if main_loop is None:
-        main_loop = tornado.ioloop.IOLoop.instance()
+        main_loop = get_ioloop()
 
-    if app is None:
-        app = CyclopsApp
     application = app(config, log_level, options.debug, main_loop)
 
-    if server_impl is None:
-        server_impl = HTTPServer
     server = server_impl(application, xheaders=True)
 
     server.bind(options.port, options.bind)
