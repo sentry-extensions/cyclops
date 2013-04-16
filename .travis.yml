@@ -13,6 +13,8 @@ install:
     - sudo apt-get update
     - sudo apt-get install redis-server -y
 
+    - sudo apt-get install mysql-server python-dev libmysqlclient-dev
+
     # install python requirements
     - pip install -U -r requirements.txt --use-mirrors
 
