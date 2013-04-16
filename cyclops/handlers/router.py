@@ -19,6 +19,24 @@ class RouterHandler(BaseHandler):
         self.set_status(404)
         self.finish()
 
+    def validate_cache(self, url):
+        count = 0
+
+        if self.application.config.URL_CACHE_EXPIRATION > 0:
+            if self.application.cache.get(url) is None:
+                self.application.cache.set(url, self.application.config.URL_CACHE_EXPIRATION)
+
+            count = self.application.cache.incr(url)
+            if count > self.application.config.MAX_CACHE_USES:
+                self.set_status(304)
+                self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
+                self.set_header("X-CYCLOPS-STATUS", "IGNORED")
+                self.application.ignored_items += 1
+                self.finish()
+                return count
+
+        return count
+
     @tornado.web.asynchronous
     def get(self, project_id):
         if int(project_id) not in self.application.project_keys:
@@ -36,18 +54,7 @@ class RouterHandler(BaseHandler):
 
         url = "%s%s?%s" % (self.application.config.SENTRY_BASE_URL, self.request.path, self.request.query)
 
-        if self.application.config.URL_CACHE_EXPIRATION > 0:
-            if self.application.cache.get(url) is None:
-                self.application.cache.set(url, self.application.config.URL_CACHE_EXPIRATION)
-
-            count = self.application.cache.incr(url)
-            if count > self.application.config.MAX_CACHE_USES:
-                self.set_status(304)
-                self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
-                self.set_header("X-CYCLOPS-STATUS", "IGNORED")
-                self.application.ignored_items += 1
-                self.finish()
-                return
+        count = self.validate_cache(url)
 
         self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
         self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
