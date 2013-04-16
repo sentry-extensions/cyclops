@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import re
+from zlib import decompress
+from base64 import b64decode
 
 import tornado.web
 from ujson import dumps, loads
@@ -119,7 +121,10 @@ class PostRouterHandler(BaseRouterHandler):
         base_url = "%s://%s:%s@%s" % (self.request.protocol, sentry_key, sentry_secret, base_url)
         url = "%s%s?%s" % (base_url, self.request.path, self.request.query)
 
-        payload = loads(self.request.body)
+        try:
+            payload = loads(self.request.body)
+        except ValueError:
+            payload = loads(decompress(b64decode(self.request.body)))
 
         cache_key = "%s:%s" % (project_id, payload['culprit'])
         count = self.validate_cache(cache_key)
