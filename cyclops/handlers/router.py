@@ -4,7 +4,7 @@
 import re
 
 import tornado.web
-from ujson import dumps
+from ujson import dumps, loads
 import msgpack
 
 from cyclops.handlers.base import BaseHandler
@@ -13,7 +13,7 @@ SENTRY_KEY = re.compile(r'sentry_key\=(.+),')
 SENTRY_SECRET = re.compile(r'sentry_secret\=(.+),?')
 
 
-class RouterHandler(BaseHandler):
+class BaseRouterHandler(BaseHandler):
 
     def _404(self):
         self.set_status(404)
@@ -37,6 +37,26 @@ class RouterHandler(BaseHandler):
 
         return count
 
+    def process_request(self, project_id, url):
+        headers = self.request.headers
+        body = self.request.body
+
+        message = (
+            project_id,
+            self.request.method,
+            headers,
+            url,
+            body
+        )
+
+        self.application.items_to_process[project_id].put(msgpack.packb(message))
+
+        self.set_status(200)
+        self.write("OK")
+        self.finish()
+
+
+class GetRouterHandler(BaseRouterHandler):
     @tornado.web.asynchronous
     def get(self, project_id):
         if int(project_id) not in self.application.project_keys:
@@ -61,9 +81,14 @@ class RouterHandler(BaseHandler):
         self.application.processed_items += 1
         self.process_request(project_id, url)
 
+
+class PostRouterHandler(BaseRouterHandler):
     @tornado.web.asynchronous
     def post(self):
         auth = self.request.headers.get('X-Sentry-Auth')
+        if not auth:
+            self._404()
+            return
 
         sentry_key = SENTRY_KEY.search(auth)
         if not sentry_key:
@@ -89,31 +114,20 @@ class RouterHandler(BaseHandler):
             self._404()
             return
 
-        self.application.processed_items += 1
-
         base_url = self.application.config.SENTRY_BASE_URL.replace('http://', '').replace('https://', '')
         base_url = "%s://%s:%s@%s" % (self.request.protocol, sentry_key, sentry_secret, base_url)
         url = "%s%s?%s" % (base_url, self.request.path, self.request.query)
 
+        payload = loads(self.request.body)
+
+        cache_key = "%s:%s" % (project_id, payload['culprit'])
+        count = self.validate_cache(cache_key)
+
+        self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
+        self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
+        self.application.processed_items += 1
+
         self.process_request(project_id, url)
-
-    def process_request(self, project_id, url):
-        headers = self.request.headers
-        body = self.request.body
-
-        message = (
-            project_id,
-            self.request.method,
-            headers,
-            url,
-            body
-        )
-
-        self.application.items_to_process[project_id].put(msgpack.packb(message))
-
-        self.set_status(200)
-        self.write("OK")
-        self.finish()
 
 
 class CountHandler(BaseHandler):
