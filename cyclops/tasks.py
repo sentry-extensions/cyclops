@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import random
 import logging
 import Queue
 import time
 
 from tornado.ioloop import PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
-import msgpack
 
 
 class ProjectsUpdateTask(object):
@@ -108,6 +106,9 @@ class SendToSentryTask(object):
             )
 
             msg = self.application.storage.get_next_message()
+            if not msg:
+                return
+
             #msg = self.application.items_to_process[random.choice(self.application.items_to_process.keys())].get_nowait()
 
             #project_id, method, headers, url, body = msgpack.unpackb(msg)
