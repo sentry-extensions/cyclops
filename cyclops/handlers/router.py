@@ -22,8 +22,7 @@ class RouterHandler(BaseHandler):
     @tornado.web.asynchronous
     def get(self, project_id):
         if int(project_id) not in self.application.project_keys:
-            self.set_status(404)
-            self.finish()
+            self._404()
             return
 
         project_id = int(project_id)
@@ -45,13 +44,13 @@ class RouterHandler(BaseHandler):
             if count > self.application.config.MAX_CACHE_USES:
                 self.set_status(304)
                 self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
-                self.set_header("X-CYCLOPS-IGNORED", "INVISIBLE")
+                self.set_header("X-CYCLOPS-STATUS", "IGNORED")
                 self.application.ignored_items += 1
                 self.finish()
                 return
 
         self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
-        self.set_header("X-CYCLOPS-IGNORED", "PROCESSED")
+        self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
         self.application.processed_items += 1
         self.process_request(project_id, url)
 

@@ -1,4 +1,4 @@
-test:
+test: redis
 	@nosetests -vv --pdb --pdb-failures --with-yanc -s --with-coverage --cover-erase --cover-inclusive --cover-package=cyclops tests/
 
 ci-test:

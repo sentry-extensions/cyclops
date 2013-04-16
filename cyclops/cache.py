@@ -33,7 +33,11 @@ class RedisCache(Cache):
             )
 
     def get(self, key):
-        return self.redis.get(key)
+        value = self.redis.get(key)
+        if value is None:
+            return None
+
+        return int(value)
 
     def incr(self, key):
         return self.redis.incr(key)
