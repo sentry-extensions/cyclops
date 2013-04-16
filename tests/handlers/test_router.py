@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import time
+import base64
+from zlib import compress
 
 from ujson import dumps, loads
 from preggy import expect
@@ -29,9 +31,10 @@ def get_sentry_auth(key, secret):
 def get_post_payload(
         event_id="fc6d8c0c43fc4630ad850ee518f1b9d0",
         culprit="my.module.function_name",
-        message="SyntaxError: Wattttt!"):
+        message="SyntaxError: Wattttt!",
+        gzipped=False):
 
-    return dumps({
+    result = dumps({
         "event_id": event_id,
         "culprit": culprit,
         "timestamp": time.time(),
@@ -45,6 +48,11 @@ def get_post_payload(
             "module": "__builtins__"
         }]
     })
+
+    if gzipped:
+        result = base64.b64encode(compress(result))
+
+    return result
 
 
 class TestGetRouterHandler(AsyncHTTPTestCase):
@@ -189,9 +197,41 @@ class TestPostRouterHandler(AsyncHTTPTestCase):
         expect(response.body).to_equal("OK")
 
         expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
-        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("1")
+        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("2")
         expect(response.headers).to_include("X-CYCLOPS-STATUS")
         expect(response.headers['X-CYCLOPS-STATUS']).to_equal("PROCESSED")
+
+        expect(self.app.processed_items).to_equal(1)
+
+        expect(self.app.storage.get_size(item)).to_equal(1)
+
+        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
+        expect(project_id).to_equal(item)
+        expect(method).to_equal("POST")
+
+        expect(headers).to_include("Host")
+        expect(headers).to_include("Accept-Encoding")
+        expect(headers).to_include("Accept")
+        expect(headers).to_include("User-Agent")
+
+        expected_url = "http://ee0c9d854b294d20a2d6d92d0191cac8:0baca85229c74e0f95d52bea5418ddfd@localhost:9000/api/store/?"
+        expect(url).to_equal(expected_url)
+        expect(body).to_equal(payload)
+
+    def test_post_works_if_gzipped(self):
+        item = self.app.project_keys.keys()[0]
+        key = self.app.project_keys[item]['public_key'][0]
+        secret = self.app.project_keys[item]['secret_key'][0]
+
+        headers = {
+            'X-Sentry-Auth': get_sentry_auth(key, secret)
+        }
+
+        payload = get_post_payload(gzipped=True)
+        response = self.fetch('/api/store/', method="POST", headers=headers, body=payload)
+
+        expect(response.code).to_equal(200)
+        expect(response.body).to_equal("OK")
 
         expect(self.app.processed_items).to_equal(1)
 
