@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from Queue import Queue, LifoQueue
+from Queue import Queue, LifoQueue, Empty
 from collections import defaultdict
 import random
 
@@ -24,9 +24,15 @@ class InMemoryStorage(object):
         return self.items_to_process[project_id].qsize()
 
     def get_next_message(self):
-        msg = self.items_to_process[random.choice(self.items_to_process.keys())].get_nowait()
-        if msg is None:
+        projects = self.items_to_process.keys()
+        if not projects:
             return None
+
+        try:
+            msg = self.items_to_process[random.choice(projects)].get_nowait()
+        except Empty:
+            return None
+
         return msgpack.unpackb(msg)
 
     def mark_as_done(self, project_id):

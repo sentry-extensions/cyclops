@@ -29,6 +29,29 @@ def test_in_memory_storage_putting_item():
     expect(storage.total_size).to_equal(2)
 
 
+def test_in_memory_storage_get_next_when_no_projects():
+    app = get_app()
+    storage = InMemoryStorage(app)
+
+    retrieved = storage.get_next_message()
+
+    expect(retrieved).to_be_null()
+
+
+def test_in_memory_storage_get_next_when_empty():
+    app = get_app()
+    storage = InMemoryStorage(app)
+
+    storage.put(project_id=20, message={
+        "test": "test2"
+    })
+
+    storage.get_next_message()
+    retrieved = storage.get_next_message()
+
+    expect(retrieved).to_be_null()
+
+
 def test_in_memory_storage_get_next():
     app = get_app()
     storage = InMemoryStorage(app)
