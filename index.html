@@ -19,7 +19,7 @@
           <a id="forkme_banner" href="https://github.com/heynemann/cyclops">View on GitHub</a>
 
           <h1 id="project_title">Cyclops</h1>
-          <h2 id="project_tagline">Cyclops is a high performance barrier in front of <a href="http://getsentry.com">Sentry</a>.</h2>
+          <h2 id="project_tagline">Cyclops is meant to be a high performance barrier in front of Sentry (http://getsentry.com).</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/heynemann/cyclops/zipball/master">Download this project as a .zip file</a>
@@ -31,29 +31,31 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <p><img src="logo.png" style="width: 652px; height: 233px" alt="Cyclops is meant to be a high performance barrier in front of [sentry](http://getsentry.com)"></p>
+        <p><img src="/logo.png" alt="Cyclops is meant to be a high performance barrier in front of [sentry](http://getsentry.com)"></p>
+
+<p><a href="https://travis-ci.org/heynemann/cyclops"><img src="https://travis-ci.org/heynemann/cyclops.png?branch=master" alt="Build Status"></a></p>
 
 <h1>Disclaimer</h1>
 
-<p>I am a huge fan of <a href="http://getsentry.com">sentry</a> and it has literally changed the level of quality of all my apps that use it, web or not.</p>
+<p><a href="http://getsentry.com">sentry</a> is an amazing tool and greatly improves the level of quality of projects using it, web or not.</p>
 
 <p>Huge props to the whole team behind it and to <a href="https://github.com/disqus" class="user-mention">@disqus</a> for releasing it to the public as open source, thus allowing us to better understand how it works.</p>
 
 <h1>The Issue</h1>
 
-<p>That said, if you have a volume of requests as large as we do (&gt; 5000 requests/second), a single Javascript error being tracked by <a href="http://getsentry.com">sentry</a> could bring our whole <a href="http://getsentry.com">sentry</a> farm down.</p>
+<p>That said, if you have a large enough volume of requests (i.e.: &gt; 5000 requests/second), a single Javascript error could bring your whole sentry farm down.</p>
 
-<p>We did some extensive Load Testing with <a href="http://getsentry.com">sentry</a> and the results will be available to everyone soon. It's just not viable for us to have <a href="http://getsentry.com">sentry</a> as the Front End to our error reporting.</p>
+<p>After some extensive Load Testing with sentry, it's just not viable to have sentry as the Front End to error reporting (considering the volume of requests above).</p>
 
-<p>We needed something that could handle tens of thousands of error reporting requests per second, then send it to <a href="http://getsentry.com">sentry</a> in a rate that it can process.</p>
+<p>Cyclops aims at being able to handle tens of thousands of error reporting requests per second. Afterwards, Cyclops sends them to sentry in a rate that's calculated using sentry's own response time as basis.</p>
 
 <h1>Cyclops</h1>
 
-<p>Cyclops is a router of <a href="http://getsentry.com">sentry</a> error reporting requests. It receives error reports, keeps them in-memory (or any other storage you implement) and sends to your <a href="http://getsentry.com">sentry</a> backend in regular intervals.</p>
+<p>Cyclops is a router of sentry error reporting requests. It receives error reports, keeps them in-memory (or any other storage you implement) and sends to your sentry backend in regular intervals.</p>
 
-<p>It takes into account the time your <a href="http://getsentry.com">sentry</a> backend is taking to service each request when calculating the interval with which to send the next request, thus making sure you don't flood your <a href="http://getsentry.com">sentry</a> backend.</p>
+<p>It takes into account the time your sentry backend is taking to service each request when calculating the interval with which to send the next request, thus making sure you don't flood your sentry backend.</p>
 
-<p>In our Load Testing, a server with 23 instances of Cyclops running handled more than 12 thousand requests per second.</p>
+<p>In preliminary load testing, a server with 23 instances of Cyclops running handled more than 12 thousand requests per second.</p>
 
 <h1>Installing</h1>
 
@@ -79,11 +81,11 @@ optional arguments:
   --debug, -d           Indicates whether to run tornado in debug mode.
 </code></pre>
 
-<p>The arguments are pretty explanatory. The key argument is the configuration file.</p>
+<p>The arguments are self-explanatory. The key argument is the configuration file.</p>
 
 <h1>Configuration</h1>
 
-<p>The configuration file is where you tell Cyclops how to behave, how to store data, how to connect to <a href="http://getsentry.com">sentry</a>, etc.</p>
+<p>The configuration file is where you tell Cyclops how to behave, how to store data, how to connect to sentry, etc.</p>
 
 <pre><code>################################### General ####################################
 
@@ -112,11 +114,10 @@ optional arguments:
 #PROCESS_NEWER_MESSAGES_FIRST = True
 
 ## The storage class used in Cyclops. Storage classes are what define how
-## received requests will be treated *before* sending to sentry. Inherits from
-## cyclops.storage.base.Storage. Built-ins: "cyclops.storage.memory" and
-## "cyclops.storage.redis."
-## Defaults to: cyclops.storage.memory
-#STORAGE = 'cyclops.storage.memory'
+## received requests will be treated *before* sending to sentry. Built-ins:
+## "cyclops.storage.InMemoryStorage" and "cyclops.storage.RedisStorage."
+## Defaults to: cyclops.storage.InMemoryStorage
+#STORAGE = 'cyclops.storage.InMemoryStorage'
 
 ################################################################################
 
@@ -163,13 +164,50 @@ optional arguments:
 #MYSQL_PASS = ''
 
 ################################################################################
+
+
+#################################### Cache #####################################
+
+## The amount of seconds to cache a given URL of error. This is meant to be a way
+## to avoid flooding your sentry farm with repeated errors. Set to 0 if you
+## don't want to cache any errors.
+## Defaults to: 1
+#URL_CACHE_EXPIRATION = 1
+
+## Number of requests to accept in the specified expiration of the cache per url.
+## Defaults to: 10
+#MAX_CACHE_USES = 10
+
+## The cache implementation to use to avoid sending the same error again to
+## sentry.
+## Defaults to: cyclops.cache.RedisCache
+#CACHE_IMPLEMENTATION_CLASS = 'cyclops.cache.RedisCache'
+
+## The host where the Redis server is running. If you are not using redis, set
+## this to None.
+## Defaults to: 127.0.0.1
+#REDIS_HOST = '127.0.0.1'
+
+## The port that Redis server is running.
+## Defaults to: 7780
+#REDIS_PORT = 7780
+
+## The number of redis db.
+## Defaults to: 0
+#REDIS_DB_COUNT = 0
+
+## The redis password
+## Defaults to: None
+#REDIS_PASSWORD = None
+
+################################################################################
 </code></pre>
 
 <h1>The Routes</h1>
 
-<p>Cyclops mymics the <code>api/store</code> routes in <a href="http://getsentry.com">sentry</a>. Both the <code>GET</code> and <code>POST</code> routes.</p>
+<p>Cyclops mymics the <code>api/store</code> routes in sentry. Both the <code>GET</code> and <code>POST</code> routes.</p>
 
-<p>You can send the errors to Cyclops in <em>EXACTLY</em> the same way you would send to <a href="http://getsentry.com">sentry</a>.</p>
+<p>You can send the errors to Cyclops in <em>EXACTLY</em> the same way you would send to sentry.</p>
 
 <p>There's one additional route, though: <code>/count</code>.</p>
 
@@ -178,10 +216,76 @@ optional arguments:
 <p>An example output of the <code>/count</code> route:</p>
 
 <pre><code>{
-count: 0,
-average: 77.491357729,
-percentile: 72.9767654253
+    count: 0, // Messages to be sent to sentry
+    average: 77.491357729, // Average response time for sentry requests
+    percentile: 72.9767654253, // 90% Percentil of response time for sentry requests
+    processed: 10, // Number of processed sentry errors for this cyclops process
+    ignored: 300 // Number of ignored sentry errors for this cyclops process
 }
+</code></pre>
+
+<h1>Storage</h1>
+
+<p>Cyclops allows users to specify any storage mechanism they want for storing messages before sending them to sentry. It comes bundled with in-memory and redis storages, but it's pretty simple to implement a new storage class, say for MemCached.</p>
+
+<p>A storage class has to implement the following interface:</p>
+
+<pre><code>def __init__(self, application):
+    # stores application for further usage
+    # and does any initialization needed
+
+def put(self, project_id, message):
+    # stores the message for later processing for the given project
+
+def get_size(self, project_id):
+    # returns the size of the "queue" for a given project
+
+def get_next_message(self):
+    # gets the next message to process, independent of project
+    # usually this is done in a round-robin fashion among projects
+
+def mark_as_done(self, project_id):
+    # indicates to the "queue" that this message is done processing
+    # which means it has been sent to sentry
+
+@property
+def total_size(self):
+    # returns the total size of all project queues
+
+@property
+def available_queues(self):
+    # returns a list of project ids
+</code></pre>
+
+<h1>Caching</h1>
+
+<p>Besides allowing users to store messages wherever they want, Cyclops allows for extensible cache implementations as well.</p>
+
+<p>Caching in Cyclops is a little different than what you might be used to. It is used as a mechanism for dropping messages that might flood your sentry farm.</p>
+
+<p>Consider what would happen if you had a page that gets hit 1000 times each second and you introduce a javascript error in it. You would get millions of VERY similar messages flooding your farm by the time you got to fix it.</p>
+
+<p>Cyclops uses the caching implementation to prevent that. If it detects that the given key (for GET requests it's the URL, for POST requests it's the Project Id + Culprit) has been processed more than <code>MAX_CACHE_USES</code> in the last <code>URL_CACHE_EXPIRATION</code> seconds it will discard it.</p>
+
+<p>Consider an expiration of 1 second with 10 max cache uses. This means that if the same key arrives more than 10 times each second, the 11th, 12th and so on will be discarded. After the second ellapses, the cache key is discarded and we start processing messages again.</p>
+
+<p>It might seem weird to process only 1% of the error requests (1000 reqs/sec and we process 10/sec), but most likely that 1% should be enough info to allow you to fix the problem.</p>
+
+<p>Implementing a Custom Cache is very simple, even though Cyclops comes bundled with a very efficient Redis cache implementation. Your cache needs to conform to this interface:</p>
+
+<pre><code>def __init__(self, application):
+    # stores application for further usage
+    # and does any initialization needed
+
+def get(self, key):
+    # gets a key usages.
+    # should return an integer if key is found, None otherwise
+
+def incr(self, key):
+    # should increment the number of times a key has been used by 1
+
+def set(self, key, expiration):
+    # should set a key to 0 and set it's expiration to "expiration" seconds
 </code></pre>
 
 <h1>cyclops-count</h1>
@@ -203,7 +307,8 @@ localhost:9004 has still 10 messages to process
 
 Total of 50 messages to send to [sentry](http://getsentry.com) from the farm at localhost.
 
-Average [sentry](http://getsentry.com) response time is 2918.66ms and 90% Percentile is 2339.53ms
+Total 300 processed items and 3000 ignored items (10.00%).
+Average sentry response time is 2918.66ms and 90% Percentile is 2339.53ms
 </code></pre>
 
 <p>This way you can keep track of how your farm is doing <em>A LOT</em> easier.</p>
@@ -214,7 +319,7 @@ Average [sentry](http://getsentry.com) response time is 2918.66ms and 90% Percen
 
 <p>We have a <a href="http://supervisord.org/">supervisor</a> instance that starts 24 instances of Cyclops in ports ranging from 9100 to 9123.</p>
 
-<p>We then use NGinx to load-balance traffic to them, and use the NGinx port to send <a href="http://getsentry.com">sentry</a> traffic to. If anyone is interested in a sample configuration for both supervisor and NGinx, just create an issue.</p>
+<p>We then use NGinx to load-balance traffic to them, and use the NGinx port to send sentry traffic to. If anyone is interested in a sample configuration for both supervisor and NGinx, just create an issue.</p>
 
 <h1>Contributing</h1>
 
