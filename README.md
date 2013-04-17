@@ -85,11 +85,10 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
     #PROCESS_NEWER_MESSAGES_FIRST = True
 
     ## The storage class used in Cyclops. Storage classes are what define how
-    ## received requests will be treated *before* sending to sentry. Inherits from
-    ## cyclops.storage.base.Storage. Built-ins: "cyclops.storage.memory" and
-    ## "cyclops.storage.redis."
-    ## Defaults to: cyclops.storage.memory
-    #STORAGE = 'cyclops.storage.memory'
+    ## received requests will be treated *before* sending to sentry. Built-ins:
+    ## "cyclops.storage.InMemoryStorage" and "cyclops.storage.RedisStorage."
+    ## Defaults to: cyclops.storage.InMemoryStorage
+    #STORAGE = 'cyclops.storage.InMemoryStorage'
 
     ################################################################################
 
@@ -194,6 +193,73 @@ An example output of the `/count` route:
         processed: 10, // Number of processed sentry errors for this cyclops process
         ignored: 300 // Number of ignored sentry errors for this cyclops process
     }
+
+
+Storage
+=======
+
+Cyclops allows users to specify any storage mechanism they want for storing messages before sending them to sentry. It comes bundled with in-memory and redis storages, but it's pretty simple to implement a new storage class, say for MemCached.
+
+A storage class has to implement the following interface:
+
+    def __init__(self, application):
+        # stores application for further usage
+        # and does any initialization needed
+
+    def put(self, project_id, message):
+        # stores the message for later processing for the given project
+
+    def get_size(self, project_id):
+        # returns the size of the "queue" for a given project
+
+    def get_next_message(self):
+        # gets the next message to process, independent of project
+        # usually this is done in a round-robin fashion among projects
+
+    def mark_as_done(self, project_id):
+        # indicates to the "queue" that this message is done processing
+        # which means it has been sent to sentry
+
+    @property
+    def total_size(self):
+        # returns the total size of all project queues
+
+    @property
+    def available_queues(self):
+        # returns a list of project ids
+
+
+Caching
+=======
+
+Besides allowing users to store messages wherever they want, Cyclops allows for extensible cache implementations as well.
+
+Caching in Cyclops is a little different than what you might be used to. It is used as a mechanism for dropping messages that might flood your sentry farm.
+
+Consider what would happen if you had a page that gets hit 1000 times each second and you introduce a javascript error in it. You would get millions of VERY similar messages flooding your farm by the time you got to fix it.
+
+Cyclops uses the caching implementation to prevent that. If it detects that the given key (for GET requests it's the URL, for POST requests it's the Project Id + Culprit) has been processed more than `MAX_CACHE_USES` in the last `URL_CACHE_EXPIRATION` seconds it will discard it.
+
+Consider an expiration of 1 second with 10 max cache uses. This means that if the same key arrives more than 10 times each second, the 11th, 12th and so on will be discarded. After the second ellapses, the cache key is discarded and we start processing messages again.
+
+It might seem weird to process only 1% of the error requests (1000 reqs/sec and we process 10/sec), but most likely that 1% should be enough info to allow you to fix the problem.
+
+Implementing a Custom Cache is very simple, even though Cyclops comes bundled with a very efficient Redis cache implementation. Your cache needs to conform to this interface:
+
+    def __init__(self, application):
+        # stores application for further usage
+        # and does any initialization needed
+
+    def get(self, key):
+        # gets a key usages.
+        # should return an integer if key is found, None otherwise
+
+    def incr(self, key):
+        # should increment the number of times a key has been used by 1
+
+    def set(self, key, expiration):
+        # should set a key to 0 and set it's expiration to "expiration" seconds
+
 
 cyclops-count
 =============
