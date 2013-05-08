@@ -288,14 +288,16 @@ This way you can keep track of how your farm is doing *A LOT* easier.
 Hosting
 =======
 
-The way we are hosting Cyclops is pretty standard.
+Hosting cyclops is as easy as hosting a tornado application.
+This is a disclaimer that the way showcased here is NOT the only way to do it.
 
-We have a [supervisor](http://supervisord.org/) instance that starts 24 instances of Cyclops in ports ranging from 9100 to 9123.
+In this scenario we assume [supervisor](http://supervisord.org/) to monitor tornado instances. 
+It will starts 10 instances of Cyclops in ports ranging from 9100 to 9109.
 
-We then use NGinx to load-balance traffic to them, and use the NGinx port to send sentry traffic to. If anyone is interested in a sample configuration for both supervisor and NGinx, just create an issue.
+In order to load balance requests to those 10 instances, NGinx is used.
 
 Supervisor config sample
-==============
+------------------------
 
     [program:cyclops]
     command=cyclops -p 91%(process_num)02d -c /path/conf.file
@@ -314,7 +316,7 @@ Supervisor config sample
     stderr_logfile_backups=10
 
 NGINX config sample
-==============
+-------------------
 
     http {
         proxy_ignore_headers Expires Cache-Control;
@@ -362,7 +364,8 @@ NGINX config sample
         }
     }
 
-
+If you have anything to add to these configuration files (in order to improve the way everyone hosts cyclops),
+please create an issue and we'll be more than happy to update the docs.
 
 Contributing
 ============
