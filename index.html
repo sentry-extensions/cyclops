@@ -31,9 +31,9 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <p><img src="./logo.png" alt="Cyclops is meant to be a high performance barrier in front of [sentry](http://getsentry.com)"></p>
+        <p><img src="/logo.png" alt="Cyclops is meant to be a high performance barrier in front of [sentry](http://getsentry.com)"></p>
 
-<p class="travis"><a href="https://travis-ci.org/heynemann/cyclops"><img src="https://travis-ci.org/heynemann/cyclops.png?branch=master" alt="Build Status"></a></p>
+<p><a href="https://travis-ci.org/heynemann/cyclops"><img src="https://travis-ci.org/heynemann/cyclops.png?branch=master" alt="Build Status"></a></p>
 
 <h1>Disclaimer</h1>
 
@@ -160,7 +160,7 @@ optional arguments:
 #MYSQL_USER = 'root'
 
 ## Password of your sentry installation MySQL database.
-## Defaults to: 
+## Defaults to:
 #MYSQL_PASS = ''
 
 ################################################################################
@@ -315,11 +315,84 @@ Average sentry response time is 2918.66ms and 90% Percentile is 2339.53ms
 
 <h1>Hosting</h1>
 
-<p>The way we are hosting Cyclops is pretty standard.</p>
+<p>Hosting cyclops is as easy as hosting a tornado application.
+This is a disclaimer that the way showcased here is NOT the only way to do it.</p>
 
-<p>We have a <a href="http://supervisord.org/">supervisor</a> instance that starts 24 instances of Cyclops in ports ranging from 9100 to 9123.</p>
+<p>In this scenario we assume <a href="http://supervisord.org/">supervisor</a> to monitor tornado instances. 
+It will starts 10 instances of Cyclops in ports ranging from 9100 to 9109.</p>
 
-<p>We then use NGinx to load-balance traffic to them, and use the NGinx port to send sentry traffic to. If anyone is interested in a sample configuration for both supervisor and NGinx, just create an issue.</p>
+<p>In order to load balance requests to those 10 instances, NGinx is used.</p>
+
+<h2>Supervisor config sample</h2>
+
+<pre><code>[program:cyclops]
+command=cyclops -p 91%(process_num)02d -c /path/conf.file
+process_name=cyclops%(process_num)02d
+user=nobody
+numprocs=10
+autostart=true
+autorestart=true
+startretries=3
+stopsignal=TERM
+stdout_logfile=/var/log/cyclops/cyclops.stdout.%(process_num)02d.log
+stdout_logfile_maxbytes=100MB
+stdout_logfile_backups=10
+stderr_logfile=/var/log/cyclops/cyclops.stderr.%(process_num)02d.log
+stderr_logfile_maxbytes=100MB
+stderr_logfile_backups=10
+</code></pre>
+
+<h2>NGINX config sample</h2>
+
+<pre><code>http {
+    proxy_ignore_headers Expires Cache-Control;
+    proxy_intercept_errors on;
+    proxy_next_upstream error timeout http_500 http_502 http_503 http_504 http_404;
+    proxy_pass_header X-Forwarded-For;
+    proxy_pass_header X-Real-IP;
+
+    error_page 400 401 403 404 405  /errordocument/404.html;
+    error_page 500 502 503 504      /errordocument/500.html;
+
+    upstream gateway {
+        server 0.0.0.0:9100;
+        server 0.0.0.0:9101;
+        server 0.0.0.0:9102;
+        server 0.0.0.0:9103;
+        server 0.0.0.0:9104;
+        server 0.0.0.0:9105;
+        server 0.0.0.0:9106;
+        server 0.0.0.0:9107;
+        server 0.0.0.0:9108;
+        server 0.0.0.0:9109;
+    }
+    server {
+        server_name cyclops.com;
+
+        listen  my_ip:8080 _;
+
+        location ~ ^/login/$ {
+            return 404;
+        }
+
+        location ~ /api/([\w_-]+/)?store {
+            proxy_pass http://gateway;
+        }
+
+        location /count {
+            proxy_pass http://gateway;
+        }
+
+        location / {
+            return 404;
+        }
+
+    }
+}
+</code></pre>
+
+<p>If you have anything to add to these configuration files (in order to improve the way everyone hosts cyclops),
+please create an issue and we'll be more than happy to update the docs.</p>
 
 <h1>Contributing</h1>
 
