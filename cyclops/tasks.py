@@ -48,6 +48,9 @@ class ProjectsUpdateTask(object):
             finally:
                 tries += 1
 
+        if db_projects is None:
+            return
+
         for project in db_projects:
             logging.info("Updating information for project with id %s..." % project.project_id)
 
