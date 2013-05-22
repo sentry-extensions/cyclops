@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
 import logging
 import Queue
 import time
 
+from MySQLdb import OperationalError
 from tornado.ioloop import PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
+
+MAX_TRIES = 10
 
 class ProjectsUpdateTask(object):
     def __init__(self, application, main_loop):
@@ -29,7 +33,22 @@ class ProjectsUpdateTask(object):
 
         projects = {}
 
-        for project in self.db.query(query):
+        db_projects = None
+        tries = 0
+
+        while db_projects is None or tries > MAX_TRIES:
+            try:
+                db_projects = self.db.query(query)
+            except OperationalError:
+                err = sys.exc_info()[1]
+                if err.args[0] != 2006:  # MYSQL Has gone Away
+                    raise err
+
+                self.db.reconnect()
+            finally:
+                tries += 1
+
+        for project in db_projects:
             logging.info("Updating information for project with id %s..." % project.project_id)
 
             if not project.project_id in projects.keys():
@@ -125,7 +144,7 @@ class SendToSentryTask(object):
             pass
 
     def mean(self, items):
-        return float(sum(items))/len(items) if len(items) > 0 else float(0)
+        return float(sum(items)) / len(items) if len(items) > 0 else float(0)
 
     def calculate_percentile(self):
         logging.debug("Length of Last Requests: %d" % len(self.application.last_requests))
