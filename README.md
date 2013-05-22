@@ -131,7 +131,7 @@ The configuration file is where you tell Cyclops how to behave, how to store dat
     #MYSQL_USER = 'root'
 
     ## Password of your sentry installation MySQL database.
-    ## Defaults to: 
+    ## Defaults to:
     #MYSQL_PASS = ''
 
     ################################################################################
@@ -288,11 +288,84 @@ This way you can keep track of how your farm is doing *A LOT* easier.
 Hosting
 =======
 
-The way we are hosting Cyclops is pretty standard.
+Hosting cyclops is as easy as hosting a tornado application.
+This is a disclaimer that the way showcased here is NOT the only way to do it.
 
-We have a [supervisor](http://supervisord.org/) instance that starts 24 instances of Cyclops in ports ranging from 9100 to 9123.
+In this scenario we assume [supervisor](http://supervisord.org/) to monitor tornado instances. 
+It will starts 10 instances of Cyclops in ports ranging from 9100 to 9109.
 
-We then use NGinx to load-balance traffic to them, and use the NGinx port to send sentry traffic to. If anyone is interested in a sample configuration for both supervisor and NGinx, just create an issue.
+In order to load balance requests to those 10 instances, NGinx is used.
+
+Supervisor config sample
+------------------------
+
+    [program:cyclops]
+    command=cyclops -p 91%(process_num)02d -c /path/conf.file
+    process_name=cyclops%(process_num)02d
+    user=nobody
+    numprocs=10
+    autostart=true
+    autorestart=true
+    startretries=3
+    stopsignal=TERM
+    stdout_logfile=/var/log/cyclops/cyclops.stdout.%(process_num)02d.log
+    stdout_logfile_maxbytes=100MB
+    stdout_logfile_backups=10
+    stderr_logfile=/var/log/cyclops/cyclops.stderr.%(process_num)02d.log
+    stderr_logfile_maxbytes=100MB
+    stderr_logfile_backups=10
+
+NGINX config sample
+-------------------
+
+    http {
+        proxy_ignore_headers Expires Cache-Control;
+        proxy_intercept_errors on;
+        proxy_next_upstream error timeout http_500 http_502 http_503 http_504 http_404;
+        proxy_pass_header X-Forwarded-For;
+        proxy_pass_header X-Real-IP;
+
+        error_page 400 401 403 404 405  /errordocument/404.html;
+        error_page 500 502 503 504      /errordocument/500.html;
+
+        upstream gateway {
+            server 0.0.0.0:9100;
+            server 0.0.0.0:9101;
+            server 0.0.0.0:9102;
+            server 0.0.0.0:9103;
+            server 0.0.0.0:9104;
+            server 0.0.0.0:9105;
+            server 0.0.0.0:9106;
+            server 0.0.0.0:9107;
+            server 0.0.0.0:9108;
+            server 0.0.0.0:9109;
+        }
+        server {
+            server_name cyclops.com;
+
+            listen  my_ip:8080 _;
+
+            location ~ ^/login/$ {
+                return 404;
+            }
+
+            location ~ /api/([\w_-]+/)?store {
+                proxy_pass http://gateway;
+            }
+
+            location /count {
+                proxy_pass http://gateway;
+            }
+
+            location / {
+                return 404;
+            }
+
+        }
+    }
+
+If you have anything to add to these configuration files (in order to improve the way everyone hosts cyclops),
+please create an issue and we'll be more than happy to update the docs.
 
 Contributing
 ============
