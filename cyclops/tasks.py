@@ -41,9 +41,9 @@ class ProjectsUpdateTask(object):
                 db_projects = self.db.query(query)
             except OperationalError:
                 err = sys.exc_info()[1]
-                if err.args[0] != 2006:  # MYSQL Has gone Away
+                if err.args and err.args[0] != 2006:  # MYSQL Has gone Away
                     raise err
-                logging.exception(exc_info=err)
+                logging.exception(err)
 
                 self.db.reconnect()
             finally:
