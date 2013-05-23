@@ -81,7 +81,7 @@ class GetRouterHandler(BaseRouterHandler):
         if project_id in self.application.config.IGNORE_PERCENTAGE:
             value = randint(1, 100)
 
-            if value < self.application.config.IGNORE_PERCENTAGE[project_id]:
+            if value < int(self.application.config.IGNORE_PERCENTAGE[project_id]):
                 self.set_status(304)
                 self.set_header("X-CYCLOPS-STATUS", "IGNORED")
                 self.application.ignored_items += 1
