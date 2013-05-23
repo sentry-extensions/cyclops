@@ -8,7 +8,6 @@ import logging
 import tornado.web
 from tornado.httpclient import AsyncHTTPClient
 from tornado.web import url
-from torndb import Connection
 
 from cyclops.handlers.router import GetRouterHandler, PostRouterHandler, CountHandler
 from cyclops.handlers.healthcheck import HealthCheckHandler
@@ -39,13 +38,6 @@ def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=No
         self.config.MYSQL_PORT,
         self.config.MYSQL_DB,
         self.config.MYSQL_USER)
-    )
-
-    self.db = Connection(
-        "%s:%s" % (self.config.MYSQL_HOST, self.config.MYSQL_PORT),
-        self.config.MYSQL_DB,
-        user=self.config.MYSQL_USER,
-        password=self.config.MYSQL_PASS
     )
 
     cache_class = get_class(self.config.CACHE_IMPLEMENTATION_CLASS)

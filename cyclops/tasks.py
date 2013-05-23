@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+#import sys
 import logging
 import Queue
 import time
 
-from MySQLdb import OperationalError
+#from MySQLdb import OperationalError
 from tornado.ioloop import PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+from torndb import Connection
 
 
 MAX_TRIES = 10
@@ -29,44 +30,41 @@ class ProjectsUpdateTask(object):
         periodic_task.start()
 
     def update(self):
+        config = self.application.config
+        db = Connection(
+            "%s:%s" % (config.MYSQL_HOST, config.MYSQL_PORT),
+            config.MYSQL_DB,
+            user=config.MYSQL_USER,
+            password=config.MYSQL_PASS
+        )
+
         query = "select project_id, public_key, secret_key from sentry_projectkey"
         logging.info("Executing query %s in MySQL" % query)
 
         projects = {}
 
-        db_projects = None
-        tries = 0
+        try:
+            db_projects = db.query(query)
 
-        while db_projects is None or tries > MAX_TRIES:
-            try:
-                db_projects = self.db.query(query)
-            except OperationalError:
-                err = sys.exc_info()[1]
-                if err.args and err.args[0] != 2006:  # MYSQL Has gone Away
-                    raise err
-                logging.exception(str(err))
+            if db_projects is None:
+                logging.warn("Could not retrieve nformation from sentry's database because MySQL Server was unavailable")
+                return
 
-                self.db.reconnect()
-            finally:
-                tries += 1
+            for project in db_projects:
+                logging.info("Updating information for project with id %s..." % project.project_id)
 
-        if db_projects is None:
-            logging.warn("Could not retrieve nformation from sentry's database because MySQL Server was unavailable")
-            return
+                if not project.project_id in projects.keys():
+                    projects[project.project_id] = {
+                        "public_key": [],
+                        "secret_key": []
+                    }
 
-        for project in db_projects:
-            logging.info("Updating information for project with id %s..." % project.project_id)
+                projects[project.project_id]['public_key'].append(project.public_key)
+                projects[project.project_id]['secret_key'].append(project.secret_key)
 
-            if not project.project_id in projects.keys():
-                projects[project.project_id] = {
-                    "public_key": [],
-                    "secret_key": []
-                }
-
-            projects[project.project_id]['public_key'].append(project.public_key)
-            projects[project.project_id]['secret_key'].append(project.secret_key)
-
-        self.application.project_keys = projects
+            self.application.project_keys = projects
+        finally:
+            db.close()
 
 
 class SendToSentryTask(object):
