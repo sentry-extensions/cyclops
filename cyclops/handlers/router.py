@@ -78,6 +78,8 @@ class GetRouterHandler(BaseRouterHandler):
         url = "%s%s?%s" % (self.application.config.SENTRY_BASE_URL, self.request.path, self.request.query)
 
         count = self.validate_cache(url)
+        if count > self.application.config.MAX_CACHE_USES:
+            return
 
         self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
         self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
@@ -128,6 +130,8 @@ class PostRouterHandler(BaseRouterHandler):
 
         cache_key = "%s:%s" % (project_id, payload['culprit'])
         count = self.validate_cache(cache_key)
+        if count > self.application.config.MAX_CACHE_USES:
+            return
 
         self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
         self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
