@@ -19,7 +19,6 @@ class ProjectsUpdateTask(object):
     def __init__(self, application, main_loop):
         self.application = application
         self.main_loop = main_loop
-        self.db = self.application.db
 
     def start(self):
         periodic_task = PeriodicCallback(
