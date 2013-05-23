@@ -7,7 +7,6 @@ from collections import defaultdict
 from Queue import LifoQueue, Queue
 
 from preggy import expect
-from torndb import Connection
 from tornado.ioloop import IOLoop
 from tornado.testing import AsyncHTTPTestCase
 
@@ -37,9 +36,6 @@ def test_configure_app():
     expect(handlers[1].name).to_equal('router_post')
     expect(handlers[2].name).to_equal('count')
     expect(handlers[3].name).to_equal('healthcheck')
-
-    expect(app.db).to_be_instance_of(Connection)
-    expect(app.db.database).to_equal('sentry_tests')
 
     expect(app.cache).to_be_instance_of(RedisCache)
     expect(app.cache.application).to_equal(app)
