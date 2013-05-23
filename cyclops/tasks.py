@@ -13,6 +13,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
 MAX_TRIES = 10
 
+
 class ProjectsUpdateTask(object):
     def __init__(self, application, main_loop):
         self.application = application
@@ -43,14 +44,14 @@ class ProjectsUpdateTask(object):
                 err = sys.exc_info()[1]
                 if err.args[0] != 2006:  # MYSQL Has gone Away
                     raise err
-                logging.exception(exc_info=err)
+                logging.exception(str(err))
 
                 self.db.reconnect()
             finally:
                 tries += 1
 
         if db_projects is None:
-            logging.warn("Could not retrieve information from sentry's database because MySQL Server was unavailable")
+            logging.warn("Could not retrieve nformation from sentry's database because MySQL Server was unavailable")
             return
 
         for project in db_projects:
