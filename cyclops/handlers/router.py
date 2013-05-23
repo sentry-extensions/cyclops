@@ -4,6 +4,7 @@
 import re
 from zlib import decompress
 from base64 import b64decode
+from random import randint
 
 import tornado.web
 from ujson import dumps, loads
@@ -76,6 +77,16 @@ class GetRouterHandler(BaseRouterHandler):
             return
 
         url = "%s%s?%s" % (self.application.config.SENTRY_BASE_URL, self.request.path, self.request.query)
+
+        if project_id in self.application.config.IGNORE_PERCENTAGE:
+            value = randint(1, 100)
+
+            if value < self.application.config.IGNORE_PERCENTAGE:
+                self.set_status(304)
+                self.set_header("X-CYCLOPS-STATUS", "IGNORED")
+                self.application.ignored_items += 1
+                self.finish()
+                return
 
         count = self.validate_cache(url)
         if count > self.application.config.MAX_CACHE_USES:

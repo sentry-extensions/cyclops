@@ -20,6 +20,7 @@ Config.define(
 
 Config.define('MAX_DUMP_INTERVAL', 1000, 'Cyclops will try to send the errors it receives to sentry as fast as possible. This is done using a percentile average of 90% of the last sentry requests time. If those requests were serviced in 30ms average, then cyclops will keep sending requests every 30ms. This setting specify a maximum interval in miliseconds to send requests to sentry.', 'Performance')
 Config.define('MAX_REQUESTS_TO_AVERAGE', 5000, 'In order to calculate the average requests, Cyclops keeps track of the times of the last requests sent to sentry. This setting specifies the maximum number of requests to average.', 'Performance')
+Config.define('IGNORE_PERCENTAGE', {}, 'Use this rate to ignore a percentage of requests if flooded. The keys for this dictionary are the project IDs and the value are the percentage of requests to ignore.', 'Performance')
 
 Config.define('MYSQL_HOST', 'localhost', 'Host of your sentry installation MySQL database.', 'Database')
 Config.define('MYSQL_PORT', 3306, 'Port of your sentry installation MySQL database.', 'Database')
