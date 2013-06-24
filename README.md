@@ -367,6 +367,71 @@ NGINX config sample
 If you have anything to add to these configuration files (in order to improve the way everyone hosts cyclops),
 please create an issue and we'll be more than happy to update the docs.
 
+In Production
+=============
+
+We have a server running in production for a month now and these are the logs (with server name changed):
+
+    server1.cyclops.com:9100 has still 1 messages to process
+    server1.cyclops.com:9101 has still 9 messages to process
+    server1.cyclops.com:9102 has still 5 messages to process
+    server1.cyclops.com:9103 has still 6 messages to process
+    server1.cyclops.com:9104 has still 8 messages to process
+    server1.cyclops.com:9105 has still 2 messages to process
+    server1.cyclops.com:9106 has still 1 messages to process
+    server1.cyclops.com:9107 has still 0 messages to process
+    server1.cyclops.com:9108 has still 3 messages to process
+    server1.cyclops.com:9109 has still 13 messages to process
+    server1.cyclops.com:9110 has still 18 messages to process
+    server1.cyclops.com:9111 has still 2 messages to process
+    server1.cyclops.com:9112 has still 2 messages to process
+    server1.cyclops.com:9113 has still 0 messages to process
+    server1.cyclops.com:9114 has still 2 messages to process
+    server1.cyclops.com:9115 has still 6 messages to process
+    server1.cyclops.com:9116 has still 13 messages to process
+    server1.cyclops.com:9117 has still 4 messages to process
+    server1.cyclops.com:9118 has still 4 messages to process
+    server1.cyclops.com:9119 has still 1 messages to process
+    server1.cyclops.com:9120 has still 11 messages to process
+    server1.cyclops.com:9121 has still 42 messages to process
+    server1.cyclops.com:9122 has still 1 messages to process
+
+    Total of 154 messages to send to sentry from the farm at server1.cyclops.com.
+
+    Total 3.007.012 processed items and 162.129.590 ignored items (98.18%).
+    Average sentry response time is 9179.47ms and 90% Percentile is 7877.86ms
+
+    server2.cyclops.com:9100 has still 1 messages to process
+    server2.cyclops.com:9101 has still 1 messages to process
+    server2.cyclops.com:9102 has still 1 messages to process
+    server2.cyclops.com:9103 has still 10 messages to process
+    server2.cyclops.com:9104 has still 13 messages to process
+    server2.cyclops.com:9105 has still 0 messages to process
+    server2.cyclops.com:9106 has still 1 messages to process
+    server2.cyclops.com:9107 has still 3 messages to process
+    server2.cyclops.com:9108 has still 5 messages to process
+    server2.cyclops.com:9109 has still 0 messages to process
+    server2.cyclops.com:9110 has still 1 messages to process
+    server2.cyclops.com:9111 has still 9 messages to process
+    server2.cyclops.com:9112 has still 11 messages to process
+    server2.cyclops.com:9113 has still 3 messages to process
+    server2.cyclops.com:9114 has still 0 messages to process
+    server2.cyclops.com:9115 has still 0 messages to process
+    server2.cyclops.com:9116 has still 3 messages to process
+    server2.cyclops.com:9117 has still 4 messages to process
+    server2.cyclops.com:9118 has still 2 messages to process
+    server2.cyclops.com:9119 has still 5 messages to process
+    server2.cyclops.com:9120 has still 22 messages to process
+    server2.cyclops.com:9121 has still 0 messages to process
+    server2.cyclops.com:9122 has still 7 messages to process
+
+    Total of 102 messages to send to sentry from the farm at server2.cyclops.com.
+
+    Total 3.001.780 processed items and 161.741.256 ignored items (98.18%).
+    Average sentry response time is 9186.61ms and 90% Percentile is 7885.74ms
+
+As you can see, that's more than 320 million events handled.
+
 Contributing
 ============
 
