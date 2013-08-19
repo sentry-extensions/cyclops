@@ -4,6 +4,13 @@
 from setuptools import setup, find_packages
 from cyclops import __version__
 
+tests_require = [
+    'nose',
+    'coverage',
+    'yanc',
+    'preggy',
+]
+
 setup(
     name='cyclops',
     version=__version__,
@@ -31,6 +38,10 @@ It keeps items in memory and dumps them at sentry in regular intervals.
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
+
+    extras_require={
+        'tests': tests_require,
+    },
 
     install_requires=[
         'tornado>=3.0.0',

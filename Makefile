@@ -16,7 +16,7 @@ run-prod:
 	@python cyclops/server.py
 
 setup:
-	@pip install -r requirements.txt
+	@pip install -e .\[tests\]
 
 kill_redis:
 	-redis-cli -p 7780 shutdown

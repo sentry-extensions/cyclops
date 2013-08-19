@@ -59,10 +59,56 @@ class BaseRouterHandler(BaseHandler):
         self.write("OK")
         self.finish()
 
+    def backend_request(self, project_id=None):
+        auth = self.request.headers.get('X-Sentry-Auth')
+        if not auth:
+            self._404()
+            return
 
-class GetRouterHandler(BaseRouterHandler):
-    @tornado.web.asynchronous
-    def get(self, project_id):
+        sentry_key = SENTRY_KEY.search(auth)
+        if not sentry_key:
+            self._404()
+            return
+
+        sentry_key = sentry_key.groups()[0]
+
+        sentry_secret = SENTRY_SECRET.search(auth)
+        if not sentry_secret:
+            self._404()
+            return
+
+        sentry_secret = sentry_secret.groups()[0]
+
+        for _project_id, keys in self.application.project_keys.iteritems():
+            if sentry_key in keys['public_key'] and sentry_secret in keys['secret_key']:
+                project_id = _project_id
+                break
+
+        if project_id is None:
+            self._404()
+            return
+
+        base_url = self.application.config.SENTRY_BASE_URL.replace('http://', '').replace('https://', '')
+        base_url = "%s://%s:%s@%s" % (self.request.protocol, sentry_key, sentry_secret, base_url)
+        url = "%s%s?%s" % (base_url, self.request.path, self.request.query)
+
+        try:
+            payload = loads(self.request.body)
+        except ValueError:
+            payload = loads(decompress(b64decode(self.request.body)))
+
+        cache_key = "%s:%s" % (project_id, payload['culprit'])
+        count = self.validate_cache(cache_key)
+        if count > self.application.config.MAX_CACHE_USES:
+            return
+
+        self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
+        self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
+        self.application.processed_items += 1
+
+        self.process_request(project_id, url)
+
+    def frontend_request(self, project_id):
         if int(project_id) not in self.application.project_keys:
             self._404()
             return
@@ -98,57 +144,20 @@ class GetRouterHandler(BaseRouterHandler):
         self.process_request(project_id, url)
 
 
-class PostRouterHandler(BaseRouterHandler):
+
+class RouterHandler(BaseRouterHandler):
+    @tornado.web.asynchronous
+    def get(self, project_id):
+        self.frontend_request(project_id)
+
+    @tornado.web.asynchronous
+    def post(self, project_id=None):
+        self.backend_request(project_id)
+
+class OldRouterHandler(BaseRouterHandler):
     @tornado.web.asynchronous
     def post(self):
-        auth = self.request.headers.get('X-Sentry-Auth')
-        if not auth:
-            self._404()
-            return
-
-        sentry_key = SENTRY_KEY.search(auth)
-        if not sentry_key:
-            self._404()
-            return
-
-        sentry_key = sentry_key.groups()[0]
-
-        sentry_secret = SENTRY_SECRET.search(auth)
-        if not sentry_secret:
-            self._404()
-            return
-
-        sentry_secret = sentry_secret.groups()[0]
-
-        project_id = None
-        for _project_id, keys in self.application.project_keys.iteritems():
-            if sentry_key in keys['public_key'] and sentry_secret in keys['secret_key']:
-                project_id = _project_id
-                break
-
-        if project_id is None:
-            self._404()
-            return
-
-        base_url = self.application.config.SENTRY_BASE_URL.replace('http://', '').replace('https://', '')
-        base_url = "%s://%s:%s@%s" % (self.request.protocol, sentry_key, sentry_secret, base_url)
-        url = "%s%s?%s" % (base_url, self.request.path, self.request.query)
-
-        try:
-            payload = loads(self.request.body)
-        except ValueError:
-            payload = loads(decompress(b64decode(self.request.body)))
-
-        cache_key = "%s:%s" % (project_id, payload['culprit'])
-        count = self.validate_cache(cache_key)
-        if count > self.application.config.MAX_CACHE_USES:
-            return
-
-        self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
-        self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
-        self.application.processed_items += 1
-
-        self.process_request(project_id, url)
+        self.backend_request()
 
 
 class CountHandler(BaseHandler):
