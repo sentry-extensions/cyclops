@@ -16,7 +16,7 @@ install:
     - sudo apt-get install mysql-server python-dev libmysqlclient-dev
 
     # install python requirements
-    - pip install -U -r requirements.txt --use-mirrors
+    - pip install -Ue .[tests] --use-mirrors
 
 script:
     # weird travis-ci python paths
