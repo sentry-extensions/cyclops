@@ -53,7 +53,8 @@ It keeps items in memory and dumps them at sentry in regular intervals.
         'msgpack-python==0.3.0',
         'redis==2.7.2',
         'redis-lock==0.2.0',
-        'argparse==1.2.1'
+        'argparse==1.2.1',
+        'MySQL-python'
     ],
 
     entry_points={
