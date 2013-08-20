@@ -28,6 +28,31 @@ def get_sentry_auth(key, secret):
     )
 
 
+def get_message_payload():
+    message = { 'time_spent': None,
+                'sentry.interfaces.Message':
+                    {'message': 'teste',
+                     'params': []
+                    },
+                'server_name': 'Guilherme-Souza.local',
+                'tags': {},
+                'event_id': 'd152d02f392945389dee3e3c072e1f5a',
+                "timestamp": time.time(),
+                'extra':
+                    {'sys.argv': ["'globoapi/server.py'",
+                                   "'-p'",
+                                   "'8989'",
+                                   "'-c'",
+                                   "'/Users/guilhermef/projetos/home/api/globoapi/globoapi.conf'",
+                                   "'-l'", "'info'"]
+                    },
+                'modules': {},
+                'project': '2',
+                'platform': 'python',
+                'message': 'teste',
+                'level': 40}
+    return dumps(message)
+
 def get_post_payload(
         event_id="fc6d8c0c43fc4630ad850ee518f1b9d0",
         culprit="my.module.function_name",
@@ -197,7 +222,7 @@ class TestPostRouterHandler(AsyncHTTPTestCase):
         expect(response.body).to_equal("OK")
 
         expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
-        # expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("2")
+        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("3")
         expect(response.headers).to_include("X-CYCLOPS-STATUS")
         expect(response.headers['X-CYCLOPS-STATUS']).to_equal("PROCESSED")
 
@@ -234,7 +259,44 @@ class TestPostRouterHandler(AsyncHTTPTestCase):
         expect(response.body).to_equal("OK")
 
         expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
-        # expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("2")
+        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("1")
+        expect(response.headers).to_include("X-CYCLOPS-STATUS")
+        expect(response.headers['X-CYCLOPS-STATUS']).to_equal("PROCESSED")
+
+        expect(self.app.processed_items).to_equal(1)
+
+        expect(self.app.storage.get_size(item)).to_equal(1)
+
+        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
+        expect(project_id).to_equal(item)
+        expect(method).to_equal("POST")
+
+        expect(headers).to_include("Host")
+        expect(headers).to_include("Accept-Encoding")
+        expect(headers).to_include("Accept")
+        expect(headers).to_include("User-Agent")
+
+        expected_url = "http://ee0c9d854b294d20a2d6d92d0191cac8:0baca85229c74e0f95d52bea5418ddfd@localhost:9000/api/%s/store/?" % item
+        expect(url).to_equal(expected_url)
+        expect(body).to_equal(payload)
+
+    def test_post_message_works_if_proper(self):
+        item = self.app.project_keys.keys()[0]
+        key = self.app.project_keys[item]['public_key'][0]
+        secret = self.app.project_keys[item]['secret_key'][0]
+
+        headers = {
+            'X-Sentry-Auth': get_sentry_auth(key, secret)
+        }
+
+        payload = get_message_payload()
+        response = self.fetch('/api/%s/store/' % item, method="POST", headers=headers, body=payload)
+
+        expect(response.code).to_equal(200)
+        expect(response.body).to_equal("OK")
+
+        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
+        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("1")
         expect(response.headers).to_include("X-CYCLOPS-STATUS")
         expect(response.headers['X-CYCLOPS-STATUS']).to_equal("PROCESSED")
 

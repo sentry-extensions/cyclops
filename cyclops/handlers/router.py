@@ -97,7 +97,12 @@ class BaseRouterHandler(BaseHandler):
         except ValueError:
             payload = loads(decompress(b64decode(self.request.body)))
 
-        cache_key = "%s:%s" % (project_id, payload['culprit'])
+        if 'culprit' in payload:
+            message_key = payload['culprit']
+        else:
+            message_key = payload['message']
+
+        cache_key = "%s:%s" % (project_id, message_key)
         count = self.validate_cache(cache_key)
         if count > self.application.config.MAX_CACHE_USES:
             return
