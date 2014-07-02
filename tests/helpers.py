@@ -18,8 +18,8 @@ class FakeLoop(object):
     def time(self):
         return time.time()
 
-    def add_timeout(self, time, callback):
-        self.timeouts.append((time, callback))
+    def add_timeout(self, at_time, callback):
+        self.timeouts.append((at_time, callback))
 
 
 class FakeServer(object):
@@ -28,6 +28,8 @@ class FakeServer(object):
     def __init__(self, application, xheaders):
         self.application = application
         self.xheaders = xheaders
+        self.port = None
+        self.ip = None
 
         FakeServer.called_with['application'] = application
         FakeServer.called_with['xheaders'] = xheaders
