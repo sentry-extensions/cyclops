@@ -43,11 +43,9 @@ def test_main_works_as_expected():
     main(args=argv, main_loop=main_loop, app=App, server_impl=FakeServer)
 
     expect(App.called_with).to_include('config')
-    expect(App.called_with).to_include('log_level')
     expect(App.called_with).to_include('debug')
     expect(App.called_with).to_include('main_loop')
 
-    expect(App.called_with['log_level']).to_equal('ERROR')
     expect(App.called_with['debug']).to_be_false()
 
     expect(main_loop.started).to_be_true()

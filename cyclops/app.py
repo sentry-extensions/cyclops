@@ -22,67 +22,70 @@ def get_class(module_name):
     return reduce(getattr, modules[1:], __import__(".".join(modules[:-1])))
 
 
-def configure_app(self, config=None, log_level='INFO', debug=False, main_loop=None):
-    self.config = config
-    self.main_loop = main_loop
+class BaseApp(object):
 
-    handlers = [
-        url(r'/api/(?P<project_id>\d+)/store/', RouterHandler, name="router"),
-        # Deprecated
-        url(r'/api/store/', OldRouterHandler, name="router_post"),
-        #/Deprecated
-        url(r'/count', CountHandler, name="count"),
-        url(r'/healthcheck(?:/|\.html)?', HealthCheckHandler, name="healthcheck"),
-    ]
+    def __init__(self, config=None, debug=False, main_loop=None, configure=True):
+        self.config = config
+        self.main_loop = main_loop
+        self.storage = None
+        self.project_keys = None
+        self.processed_items = None
+        self.ignored_items = None
+        self.last_requests = None
+        self.average_request_time = None
+        self.percentile_request_time = None
+        self.cache = None
+        if configure:
+            self.configure(debug=debug)
 
-    logging.info("Connecting to db on {0}:{1} on database {2} with user {3}".format(
-        self.config.MYSQL_HOST,
-        self.config.MYSQL_PORT,
-        self.config.MYSQL_DB,
-        self.config.MYSQL_USER)
-    )
+    def configure(self, debug=False):
+        if debug:
+            self.config.NUMBER_OF_FORKS = 1
+        logging.info("Connecting to db on {0}:{1} on database {2} with user {3}".format(
+            self.config.MYSQL_HOST,
+            self.config.MYSQL_PORT,
+            self.config.MYSQL_DB,
+            self.config.MYSQL_USER)
+        )
 
-    cache_class = get_class(self.config.CACHE_IMPLEMENTATION_CLASS)
-    self.cache = cache_class(self)
+        cache_class = get_class(self.config.CACHE_IMPLEMENTATION_CLASS)
+        self.cache = cache_class(self)
 
-    storage_class = get_class(self.config.STORAGE)
-    self.storage = storage_class(self)
+        storage_class = get_class(self.config.STORAGE)
+        self.storage = storage_class(self)
 
-    options = {}
+        self.project_keys = {}
 
-    self.project_keys = {}
+        self.processed_items = 0
+        self.ignored_items = 0
 
-    self.processed_items = 0
-    self.ignored_items = 0
+        self.last_requests = []
+        self.average_request_time = None
+        self.percentile_request_time = None
 
-    #if self.config.PROCESS_NEWER_MESSAGES_FIRST:
-        #self.items_to_process = defaultdict(LifoQueue)
-    #else:
-        #self.items_to_process = defaultdict(Queue)
+        projects_update_task = ProjectsUpdateTask(self, self.main_loop)
+        projects_update_task.update()
+        projects_update_task.start()
 
-    self.last_requests = []
-    self.average_request_time = None
-    self.percentile_request_time = None
+        send_to_sentry_task = SendToSentryTask(self, self.main_loop)
+        send_to_sentry_task.update()
+        send_to_sentry_task.start()
 
-    projects_update_task = ProjectsUpdateTask(self, self.main_loop)
-    projects_update_task.update()
-    projects_update_task.start()
+        AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 
-    send_to_sentry_task = SendToSentryTask(self, self.main_loop)
-    send_to_sentry_task.update()
-    send_to_sentry_task.start()
-
-    if debug:
-        options['debug'] = True
-        config.NUMBER_OF_FORKS = 1
-
-    AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
-
-    return handlers, options
+    def get_handlers(self):
+        return [
+            url(r'/api/(?P<project_id>\d+)/store/', RouterHandler, name="router"),
+            # Deprecated
+            url(r'/api/store/', OldRouterHandler, name="router_post"),
+            #/Deprecated
+            url(r'/count', CountHandler, name="count"),
+            url(r'/healthcheck(?:/|\.html)?', HealthCheckHandler, name="healthcheck"),
+        ]
 
 
-class CyclopsApp(tornado.web.Application):
+class CyclopsApp(BaseApp, tornado.web.Application):
 
-    def __init__(self, config=None, log_level='INFO', debug=False, main_loop=None):
-        handlers, options = configure_app(self, config, log_level, debug, main_loop)
-        super(CyclopsApp, self).__init__(handlers, **options)
+    def __init__(self, config=None, debug=False, main_loop=None, configure=True):
+        super(CyclopsApp, self).__init__(config=config, debug=debug, main_loop=main_loop, configure=configure)
+        tornado.web.Application.__init__(self, self.get_handlers(), debug=debug)

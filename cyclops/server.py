@@ -67,7 +67,7 @@ def main(args=None, main_loop=None, app=CyclopsApp, server_impl=HTTPServer, get_
     if main_loop is None:
         main_loop = get_ioloop()
 
-    application = app(config, log_level, options.debug, main_loop)
+    application = app(config, options.debug, main_loop)
 
     server = server_impl(application, xheaders=True)
 
