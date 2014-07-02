@@ -60,6 +60,7 @@ It keeps items in memory and dumps them at sentry in regular intervals.
     entry_points={
         'console_scripts': [
             'cyclops=cyclops.server:main',
+            'cyclops-init=cyclops.init:main',
             'cyclops-count=cyclops.count:main',
         ],
     }
