@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from torndb import Connection
 
 class ProjectLoader(object):
 
@@ -18,6 +17,19 @@ class ProjectLoader(object):
         )
 
     def get_project_keys(self):
+        project_keys = {}
+        if self.config.MYSQL_HOST is not None:
+            project_keys.update(self.get_project_keys_from_mysql())
+        elif self.config.PROJECT_KEYS is not None:
+            project_keys.update(self.get_project_keys_from_list())
+        if len(project_keys) == 0:
+            logging.warning("Empty project key list. You must either fill your"
+                    "MySQL project database or manually define the PROJECT_KEYS"
+                    "configuration variable")
+        return project_keys
+
+    def get_project_keys_from_mysql(self):
+        from torndb import Connection
         db = Connection(
             "%s:%s" % (self.config.MYSQL_HOST, self.config.MYSQL_PORT),
             self.config.MYSQL_DB,
@@ -38,15 +50,24 @@ class ProjectLoader(object):
 
             for project in db_projects:
                 logging.info("Updating information for project with id %s...", project.project_id)
+                self.add_project(project_keys, project.project_id, project.public_key, project.secret_key)
 
-                if not project.project_id in project_keys:
-                    project_keys[project.project_id] = {
-                        "public_key": [],
-                        "secret_key": []
-                    }
-
-                project_keys[project.project_id]['public_key'].append(project.public_key)
-                project_keys[project.project_id]['secret_key'].append(project.secret_key)
         finally:
             db.close()
         return project_keys
+
+    def get_project_keys_from_list(self):
+        project_keys = {}
+        for project_id, (public_key, secret_key) in enumerate(self.config.PROJECT_KEYS):
+            self.add_project(project_keys, project_id, public_key, secret_key)
+        return project_keys
+
+    @staticmethod
+    def add_project(project_keys, project_id, public_key, secret_key):
+        if not project_id in project_keys:
+            project_keys[project_id] = {
+                "public_key": [],
+                "secret_key": []
+            }
+        project_keys[project_id]['public_key'].append(public_key)
+        project_keys[project_id]['secret_key'].append(secret_key)
