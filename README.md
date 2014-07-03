@@ -130,8 +130,8 @@ Here is an example configuration file:
 
     ################################### Projects ###################################
 
-    ## List of (public_key, secret_key) tuples that describe the projects handled by
-    ## this Cyclops instance.
+    ## List of (project_id, public_key, secret_key) tuples that describe the
+    ## projects handled by this Cyclops instance.
     ## Defaults to: None
     #PROJECT_KEYS = None
 

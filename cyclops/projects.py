@@ -58,7 +58,7 @@ class ProjectLoader(object):
 
     def get_project_keys_from_list(self):
         project_keys = {}
-        for project_id, (public_key, secret_key) in enumerate(self.config.PROJECT_KEYS):
+        for project_id, public_key, secret_key in self.config.PROJECT_KEYS:
             self.add_project(project_keys, project_id, public_key, secret_key)
         return project_keys
 
