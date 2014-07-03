@@ -4,11 +4,16 @@
 from setuptools import setup, find_packages
 from cyclops import __version__
 
-tests_require = [
+mysql_requires = [
+    'torndb==0.1',
+    'MySQL-python'
+]
+tests_require = mysql_requires + [
     'nose',
     'coverage',
     'yanc',
     'preggy',
+    'nose',
 ]
 
 setup(
@@ -41,11 +46,11 @@ It keeps items in memory and dumps them at sentry in regular intervals.
 
     extras_require={
         'tests': tests_require,
+        'mysql': mysql_requires,
     },
 
     install_requires=[
         'tornado>=3.0.0',
-        'torndb==0.1',
         'derpconf==0.3.3',
         'pycurl==7.19.0',
         'requests==1.1.0',
@@ -54,7 +59,6 @@ It keeps items in memory and dumps them at sentry in regular intervals.
         'redis==2.7.2',
         'redis-lock==0.2.0',
         'argparse==1.2.1',
-        'MySQL-python'
     ],
 
     entry_points={
