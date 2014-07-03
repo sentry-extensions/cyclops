@@ -4,12 +4,6 @@ python:
   - "2.7"
 
 install:
-    # weird travis-ci python paths
-    - export PYTHONPATH=$PYTHONPATH:/usr/lib/pymodules/python2.7/
-    - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages
-    - export PYTHONPATH=$PYTHONPATH:/usr/lib/pyshared/python2.7/
-    - export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.7/site-packages/
-
     - sudo apt-get update
     - sudo apt-get install redis-server -y
 
@@ -19,11 +13,5 @@ install:
     - pip install -Ue .[tests] --use-mirrors
 
 script:
-    # weird travis-ci python paths
-    - export PYTHONPATH=$PYTHONPATH:/usr/lib/pymodules/python2.7/
-    - export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages
-    - export PYTHONPATH=$PYTHONPATH:/usr/lib/pyshared/python2.7/
-    - export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.7/site-packages/
-
     # finally run tests
     - make ci-test
