@@ -22,7 +22,8 @@ Config.define('MAX_DUMP_INTERVAL', 1000, 'Cyclops will try to send the errors it
 Config.define('MAX_REQUESTS_TO_AVERAGE', 5000, 'In order to calculate the average requests, Cyclops keeps track of the times of the last requests sent to sentry. This setting specifies the maximum number of requests to average.', 'Performance')
 Config.define('IGNORE_PERCENTAGE', {}, 'Use this rate to ignore a percentage of requests if flooded. The keys for this dictionary are the project IDs and the value are the percentage of requests to ignore.', 'Performance')
 
-Config.define('MYSQL_HOST', 'localhost', 'Host of your sentry installation MySQL database.', 'Database')
+Config.define('PROJECT_KEYS', None, 'List of (project_id, public_key, secret_key) tuples that describe the projects handled by this Cyclops instance.', 'Projects')
+Config.define('MYSQL_HOST', 'localhost', 'Host of your sentry installation MySQL database. Set this to None if you do not wish to load project keys from the database. In that case, you will have to fill the PROJECT_KEYS variable.', 'Database')
 Config.define('MYSQL_PORT', 3306, 'Port of your sentry installation MySQL database.', 'Database')
 Config.define('MYSQL_DB', 'sentry', 'Database of your sentry installation MySQL database.', 'Database')
 Config.define('MYSQL_USER', 'root', 'User of your sentry installation MySQL database.', 'Database')

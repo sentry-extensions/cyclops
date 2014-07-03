@@ -4,6 +4,7 @@
 import time
 
 from cyclops.config import Config
+from cyclops.app import BaseApp
 
 
 class FakeLoop(object):
@@ -17,8 +18,8 @@ class FakeLoop(object):
     def time(self):
         return time.time()
 
-    def add_timeout(self, time, callback):
-        self.timeouts.append((time, callback))
+    def add_timeout(self, at_time, callback):
+        self.timeouts.append((at_time, callback))
 
 
 class FakeServer(object):
@@ -27,6 +28,8 @@ class FakeServer(object):
     def __init__(self, application, xheaders):
         self.application = application
         self.xheaders = xheaders
+        self.port = None
+        self.ip = None
 
         FakeServer.called_with['application'] = application
         FakeServer.called_with['xheaders'] = xheaders
@@ -45,17 +48,13 @@ class FakeServer(object):
         FakeServer.called_with['procs'] = procs
 
 
-class App(object):
+class App(BaseApp):
     called_with = {}
 
-    def __init__(self, config=None, log_level='info', debug=False, main_loop=None):
-        self.config = config
-        self.log_level = log_level
-        self.debug = debug
-        self.main_loop = main_loop
+    def __init__(self, config=None, debug=False, main_loop=None, configure=False):
+        super(App, self).__init__(config=config, debug=debug, main_loop=main_loop, configure=configure)
 
         App.called_with['config'] = config
-        App.called_with['log_level'] = log_level
         App.called_with['debug'] = debug
         App.called_with['main_loop'] = main_loop
 

@@ -10,7 +10,7 @@ from preggy import expect
 from tornado.ioloop import IOLoop
 from tornado.testing import AsyncHTTPTestCase
 
-from cyclops.app import get_class, configure_app, CyclopsApp
+from cyclops.app import get_class, CyclopsApp
 from cyclops.storage import InMemoryStorage
 from cyclops.cache import RedisCache
 from tests.helpers import FakeLoop, App, forget, get_config
@@ -22,11 +22,10 @@ def test_get_class():
 
 
 def test_configure_app():
-    app = App()
     cfg = get_config()
-
     loop = FakeLoop()
-    handlers, options = configure_app(app, config=cfg, log_level='WARNING', debug=True, main_loop=loop)
+    app = App(config=cfg, debug=True, main_loop=loop, configure=True)
+    handlers = app.get_handlers()
 
     expect(app.main_loop).to_equal(loop)
     expect(app.config).to_equal(cfg)
@@ -55,20 +54,15 @@ def test_configure_app():
     expect(app.average_request_time).to_be_null()
     expect(app.percentile_request_time).to_be_null()
 
-    expect(options).to_length(1)
-    expect(options['debug']).to_be_true()
-
     expect(cfg.NUMBER_OF_FORKS).to_equal(1)
 
     forget()
 
 
 def test_configure_app_to_FifoQueue():
-    app = App()
     cfg = get_config(PROCESS_NEWER_MESSAGES_FIRST=False)
-
     loop = FakeLoop()
-    handlers, options = configure_app(app, config=cfg, log_level='WARNING', debug=True, main_loop=loop)
+    app = App(config=cfg, debug=True, main_loop=loop, configure=True)
 
     expect(app.storage.items_to_process).to_be_instance_of(defaultdict)
     expect(app.storage.items_to_process.default_factory).to_equal(Queue)

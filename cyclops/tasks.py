@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#import sys
 import logging
 import Queue
 import time
 
-#from MySQLdb import OperationalError
 from tornado.ioloop import PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
-from torndb import Connection
 
 
 MAX_TRIES = 10
@@ -29,41 +26,9 @@ class ProjectsUpdateTask(object):
         periodic_task.start()
 
     def update(self):
-        config = self.application.config
-        db = Connection(
-            "%s:%s" % (config.MYSQL_HOST, config.MYSQL_PORT),
-            config.MYSQL_DB,
-            user=config.MYSQL_USER,
-            password=config.MYSQL_PASS
-        )
-
-        query = "select project_id, public_key, secret_key from sentry_projectkey"
-        logging.info("Executing query %s in MySQL" % query)
-
-        projects = {}
-
-        try:
-            db_projects = db.query(query)
-
-            if db_projects is None:
-                logging.warn("Could not retrieve nformation from sentry's database because MySQL Server was unavailable")
-                return
-
-            for project in db_projects:
-                logging.info("Updating information for project with id %s..." % project.project_id)
-
-                if not project.project_id in projects.keys():
-                    projects[project.project_id] = {
-                        "public_key": [],
-                        "secret_key": []
-                    }
-
-                projects[project.project_id]['public_key'].append(project.public_key)
-                projects[project.project_id]['secret_key'].append(project.secret_key)
-
-            self.application.project_keys = projects
-        finally:
-            db.close()
+        if self.application.load_project_keys() is None:
+            logging.warn("Could not retrieve information from sentry's "
+                    "database because MySQL Server was unavailable")
 
 
 class SendToSentryTask(object):
@@ -84,7 +49,7 @@ class SendToSentryTask(object):
     def get_handle_request(self, project_id):
         def handle_request(response):
             response_time = response.request_time
-            logging.debug("Request handled in %.2f" % response_time)
+            logging.debug("Request handled in %.2f", response_time)
             self.application.last_requests.append(response_time)
             self.application.last_requests = self.application.last_requests[
                 max(0, len(self.application.last_requests) - self.application.config.MAX_REQUESTS_TO_AVERAGE):]
@@ -95,7 +60,7 @@ class SendToSentryTask(object):
             #self.application.items_to_process[project_id].task_done()
 
             if response.error:
-                logging.error("Error: %s" % response.error)
+                logging.error("Error: %s", response.error)
             else:
                 logging.debug("OK")
         return handle_request
@@ -106,12 +71,12 @@ class SendToSentryTask(object):
                 self.application.config.MAX_DUMP_INTERVAL or \
                 min(self.application.percentile_request_time, self.application.config.MAX_DUMP_INTERVAL)
 
-            logging.debug("Actual App Request Time: %.2fms" % app_request_time)
+            logging.debug("Actual App Request Time: %.2fms", app_request_time)
             if self.application.percentile_request_time:
-                logging.debug("Percentile Request Time: %.2f ms" % self.application.percentile_request_time)
+                logging.debug("Percentile Request Time: %.2f ms", self.application.percentile_request_time)
             if self.last_sent:
-                logging.debug("Last Sent: %d" % self.last_sent)
-                logging.debug("Now - Last Sent: %d" % (time.time() - self.last_sent))
+                logging.debug("Last Sent: %d", self.last_sent)
+                logging.debug("Now - Last Sent: %d", (time.time() - self.last_sent))
 
             if self.application.percentile_request_time is not None and \
                     self.last_sent is not None and \
@@ -123,7 +88,7 @@ class SendToSentryTask(object):
                 return
 
             logging.debug(
-                "Getting a message at random from one of the available queues: [%s]" %
+                "Getting a message at random from one of the available queues: [%s]",
                 ", ".join(self.application.storage.available_queues)
             )
 
@@ -131,14 +96,11 @@ class SendToSentryTask(object):
             if not msg:
                 return
 
-            #msg = self.application.items_to_process[random.choice(self.application.items_to_process.keys())].get_nowait()
-
-            #project_id, method, headers, url, body = msgpack.unpackb(msg)
             project_id, method, headers, url, body = msg
 
             request = HTTPRequest(url=url, headers=headers, method=method, body=body)
 
-            logging.debug("Sending to sentry at %s" % url)
+            logging.debug("Sending to sentry at %s", url)
             self.start_time = time.time()
             self.last_sent = time.time()
             http_client = AsyncHTTPClient(io_loop=self.main_loop)
@@ -150,7 +112,7 @@ class SendToSentryTask(object):
         return float(sum(items)) / len(items) if len(items) > 0 else float(0)
 
     def calculate_percentile(self):
-        logging.debug("Length of Last Requests: %d" % len(self.application.last_requests))
+        logging.debug("Length of Last Requests: %d", len(self.application.last_requests))
         sorted_times = list(reversed(sorted(self.application.last_requests)))
         last_message = int(round(len(self.application.last_requests) * 0.9))
         return self.mean(sorted_times[len(self.application.last_requests) - last_message:])
