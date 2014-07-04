@@ -29,28 +29,33 @@ def get_sentry_auth(key, secret):
 
 
 def get_message_payload():
-    message = { 'time_spent': None,
-                'sentry.interfaces.Message':
-                    {'message': 'teste',
-                     'params': []
-                    },
-                'server_name': 'Guilherme-Souza.local',
-                'tags': {},
-                'event_id': 'd152d02f392945389dee3e3c072e1f5a',
-                "timestamp": time.time(),
-                'extra':
-                    {'sys.argv': ["'globoapi/server.py'",
-                                   "'-p'",
-                                   "'8989'",
-                                   "'-c'",
-                                   "'/Users/guilhermef/projetos/home/api/globoapi/globoapi.conf'",
-                                   "'-l'", "'info'"]
-                    },
-                'modules': {},
-                'project': '2',
-                'platform': 'python',
+    message = {
+            'time_spent': None,
+            'sentry.interfaces.Message': {
                 'message': 'teste',
-                'level': 40}
+                'params': []
+                },
+            'server_name': 'Guilherme-Souza.local',
+            'tags': {},
+            'event_id': 'd152d02f392945389dee3e3c072e1f5a',
+            "timestamp": time.time(),
+            'extra': {
+                'sys.argv': [
+                    "'globoapi/server.py'",
+                    "'-p'",
+                    "'8989'",
+                    "'-c'",
+                    "'/Users/guilhermef/projetos/home/api/globoapi/globoapi.conf'",
+                    "'-l'",
+                    "'info'"
+                    ]
+                },
+            'modules': {},
+            'project': '2',
+            'platform': 'python',
+            'message': 'teste',
+            'level': 40
+            }
     return dumps(message)
 
 def get_post_payload(
@@ -80,7 +85,12 @@ def get_post_payload(
     return result
 
 
-class TestGetRouterHandler(AsyncHTTPTestCase):
+class BaseRouterTest(AsyncHTTPTestCase):
+    def setUp(self):
+        super(BaseRouterTest, self).setUp()
+        # self._app is set to self.get_app() in mother setUp() call
+        self.app = self._app
+
     def get_app(self):
         cfg = get_config(
             CACHE_IMPLEMENTATION_CLASS='cyclops.cache.RedisCache',
@@ -89,9 +99,67 @@ class TestGetRouterHandler(AsyncHTTPTestCase):
             REDIS_DB_COUNT=0,
             REDIS_PASSWORD=None
         )
+        return CyclopsApp(config=cfg)
 
-        self.app = CyclopsApp(config=cfg)
-        return self.app
+    def expect_404(self, response):
+        expect(response.code).to_equal(404)
+        expect(response.body).to_be_empty()
+
+    def expect_200(self, response):
+        expect(response.code).to_equal(200)
+        expect(response.body).to_equal("OK")
+
+    def expect_304(self, response):
+        expect(response.code).to_equal(304)
+        expect(response.body).to_be_empty()
+
+    def api_store_url(self, item=None):
+        url = "http://ee0c9d854b294d20a2d6d92d0191cac8:0baca85229c74e0f95d52bea5418ddfd@localhost:9000/api/"
+        if item is not None:
+            url += "%s/store/?" % item
+        else:
+            url += "store/?"
+        return url
+
+    def get_project_keys(self):
+        project_id = self.app.project_keys.keys()[0]
+        public_key = self.app.project_keys[project_id]['public_key'][0]
+        secret_key = self.app.project_keys[project_id]['secret_key'][0]
+        return project_id, public_key, secret_key
+
+    def expect_correct_response_headers(self,
+            response,
+            expected_cache_count,
+            expected_status):
+        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
+        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal(str(expected_cache_count))
+        expect(response.headers).to_include("X-CYCLOPS-STATUS")
+        expect(response.headers['X-CYCLOPS-STATUS']).to_equal(expected_status)
+
+    def expect_one_processed_item(self, item,
+            expected_method,
+            expected_url,
+            expected_body=None):
+        expect(self.app.processed_items).to_equal(1)
+        expect(self.app.storage.get_size(item)).to_equal(1)
+
+        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
+        expect(project_id).to_equal(item)
+
+        expect(method).to_equal(expected_method)
+        expect(headers).to_include("Host")
+        expect(headers).to_include("Accept-Encoding")
+        expect(headers).to_include("Accept")
+        expect(headers).to_include("User-Agent")
+
+        expect(url).to_equal(url)
+        if expected_body is None:
+            expect(body).to_be_empty()
+        else:
+            expect(body).to_equal(expected_body)
+
+
+class TestGetRouterHandler(BaseRouterTest):
 
     def test_get_invalid_project_returns_404(self):
         response = self.fetch('/api/999999/store/')
@@ -107,78 +175,57 @@ class TestGetRouterHandler(AsyncHTTPTestCase):
         key = self.app.project_keys[item]['public_key'][0]
         response = self.fetch('/api/%s/store/?sentry_key=%s' % (item, key))
 
-        expect(response.code).to_equal(200)
-        expect(response.body).to_equal("OK")
+        self.expect_200(response)
 
-        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
-        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("1")
-        expect(response.headers).to_include("X-CYCLOPS-STATUS")
-        expect(response.headers['X-CYCLOPS-STATUS']).to_equal("PROCESSED")
+        self.expect_correct_response_headers(response, 1, "PROCESSED")
 
-        expect(self.app.processed_items).to_equal(1)
-
-        expect(self.app.storage.get_size(item)).to_equal(1)
-
-        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
-        expect(project_id).to_equal(item)
-        expect(method).to_equal("GET")
-
-        expect(headers).to_include("Host")
-        expect(headers).to_include("Accept-Encoding")
-        expect(headers).to_include("Accept")
-        expect(headers).to_include("User-Agent")
-
-        expect(url).to_equal("localhost:9000/api/1/store/?sentry_key=ee0c9d854b294d20a2d6d92d0191cac8")
-        expect(body).to_be_empty()
+        self.expect_one_processed_item(item, "GET",
+                "localhost:9000/api/1/store/?sentry_key=ee0c9d854b294d20a2d6d92d0191cac8")
 
     def test_get_valid_project_with_valid_key_ignores(self):
         item = self.app.project_keys.keys()[0]
         key = self.app.project_keys[item]['public_key'][0]
 
-        for i in range(self.app.config.MAX_CACHE_USES + 1):
+        for _i in range(self.app.config.MAX_CACHE_USES + 1):
             response = self.fetch('/api/%s/store/?sentry_key=%s' % (item, key))
 
-        expect(response.code).to_equal(304)
-        expect(response.body).to_be_empty()
+        self.expect_304(response)
 
-        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
-        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("12")
-        expect(response.headers).to_include("X-CYCLOPS-STATUS")
-        expect(response.headers['X-CYCLOPS-STATUS']).to_equal("IGNORED")
+        self.expect_correct_response_headers(response, 12, "IGNORED")
 
 
-class TestPostRouterHandler(AsyncHTTPTestCase):
-    def get_app(self):
-        cfg = get_config(
-            CACHE_IMPLEMENTATION_CLASS='cyclops.cache.RedisCache',
-            REDIS_HOST='localhost',
-            REDIS_PORT=7780,
-            REDIS_DB_COUNT=0,
-            REDIS_PASSWORD=None
-        )
+class TestPostRouterHandler(BaseRouterTest):
 
-        self.app = CyclopsApp(config=cfg)
-        return self.app
+    def post_expect_404(self, headers=None, body=None):
+        response = self.fetch('/api/store/', method="POST", headers=headers, body=body)
+        self.expect_404(response)
+
+    def expect_post_works(self, url, expected_cache_count, gzipped=False):
+        item, key, secret = self.get_project_keys()
+
+        headers = {
+            'X-Sentry-Auth': get_sentry_auth(key, secret)
+        }
+
+        payload = get_post_payload()
+        response = self.fetch(url, method="POST", headers=headers, body=payload)
+
+        self.expect_200(response)
+        self.expect_correct_response_headers(response, expected_cache_count, "PROCESSED")
+        self.expect_one_processed_item(item, "POST", self.api_store_url(), payload)
 
     def test_post_fails_if_no_auth_header_supplied(self):
         response = self.fetch('/api/store/', method="POST", body="x=1")
-
-        expect(response.code).to_equal(404)
-        expect(response.body).to_be_empty()
+        self.expect_404(response)
 
     def test_post_fails_if_auth_header_does_not_include_public_key(self):
         headers = {
             'X-Sentry-Auth': "invalid header"
         }
-
-        response = self.fetch('/api/store/', method="POST", headers=headers, body="x=1")
-
-        expect(response.code).to_equal(404)
-        expect(response.body).to_be_empty()
+        self.post_expect_404(headers=headers, body="x=1")
 
     def test_post_fails_if_auth_header_does_not_include_secret(self):
-        item = self.app.project_keys.keys()[0]
-        key = self.app.project_keys[item]['public_key'][0]
+        _item, key, _secret = self.get_project_keys()
 
         headers = {
             'X-Sentry-Auth': """X-Sentry-Auth: Sentry sentry_version=4,
@@ -186,104 +233,26 @@ class TestPostRouterHandler(AsyncHTTPTestCase):
                                 sentry_timestamp=%s,
                                 sentry_key=%s,""" % (time.time(), key)
         }
-
-        response = self.fetch('/api/store/', method="POST", headers=headers, body="x=1")
-
-        expect(response.code).to_equal(404)
-        expect(response.body).to_be_empty()
+        self.post_expect_404(headers=headers, body="x=1")
 
     def test_post_fails_if_auth_header_is_invalid_project(self):
-        item = self.app.project_keys.keys()[0]
-        key = self.app.project_keys[item]['public_key'][0]
+        _item, key, secret = self.get_project_keys()
         secret = "invalid-secret"
 
         headers = {
             'X-Sentry-Auth': get_sentry_auth(key, secret)
         }
-
-        response = self.fetch('/api/store/', method="POST", headers=headers, body="x=1")
-
-        expect(response.code).to_equal(404)
-        expect(response.body).to_be_empty()
+        self.post_expect_404(headers=headers, body="x=1")
 
     def test_post_works_if_proper(self):
-        item = self.app.project_keys.keys()[0]
-        key = self.app.project_keys[item]['public_key'][0]
-        secret = self.app.project_keys[item]['secret_key'][0]
-
-        headers = {
-            'X-Sentry-Auth': get_sentry_auth(key, secret)
-        }
-
-        payload = get_post_payload()
-        response = self.fetch('/api/store/', method="POST", headers=headers, body=payload)
-
-        expect(response.code).to_equal(200)
-        expect(response.body).to_equal("OK")
-
-        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
-        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("3")
-        expect(response.headers).to_include("X-CYCLOPS-STATUS")
-        expect(response.headers['X-CYCLOPS-STATUS']).to_equal("PROCESSED")
-
-        expect(self.app.processed_items).to_equal(1)
-
-        expect(self.app.storage.get_size(item)).to_equal(1)
-
-        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
-        expect(project_id).to_equal(item)
-        expect(method).to_equal("POST")
-
-        expect(headers).to_include("Host")
-        expect(headers).to_include("Accept-Encoding")
-        expect(headers).to_include("Accept")
-        expect(headers).to_include("User-Agent")
-
-        expected_url = "http://ee0c9d854b294d20a2d6d92d0191cac8:0baca85229c74e0f95d52bea5418ddfd@localhost:9000/api/store/?"
-        expect(url).to_equal(expected_url)
-        expect(body).to_equal(payload)
+        self.expect_post_works('/api/store/', 3)
 
     def test_post_new_url_works_if_proper(self):
-        item = self.app.project_keys.keys()[0]
-        key = self.app.project_keys[item]['public_key'][0]
-        secret = self.app.project_keys[item]['secret_key'][0]
-
-        headers = {
-            'X-Sentry-Auth': get_sentry_auth(key, secret)
-        }
-
-        payload = get_post_payload()
-        response = self.fetch('/api/%s/store/' % item, method="POST", headers=headers, body=payload)
-
-        expect(response.code).to_equal(200)
-        expect(response.body).to_equal("OK")
-
-        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
-        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("1")
-        expect(response.headers).to_include("X-CYCLOPS-STATUS")
-        expect(response.headers['X-CYCLOPS-STATUS']).to_equal("PROCESSED")
-
-        expect(self.app.processed_items).to_equal(1)
-
-        expect(self.app.storage.get_size(item)).to_equal(1)
-
-        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
-        expect(project_id).to_equal(item)
-        expect(method).to_equal("POST")
-
-        expect(headers).to_include("Host")
-        expect(headers).to_include("Accept-Encoding")
-        expect(headers).to_include("Accept")
-        expect(headers).to_include("User-Agent")
-
-        expected_url = "http://ee0c9d854b294d20a2d6d92d0191cac8:0baca85229c74e0f95d52bea5418ddfd@localhost:9000/api/%s/store/?" % item
-        expect(url).to_equal(expected_url)
-        expect(body).to_equal(payload)
+        item, _key, _secret = self.get_project_keys()
+        self.expect_post_works('/api/%s/store/' % item, 1)
 
     def test_post_message_works_if_proper(self):
-        item = self.app.project_keys.keys()[0]
-        key = self.app.project_keys[item]['public_key'][0]
-        secret = self.app.project_keys[item]['secret_key'][0]
+        item, key, secret = self.get_project_keys()
 
         headers = {
             'X-Sentry-Auth': get_sentry_auth(key, secret)
@@ -292,67 +261,15 @@ class TestPostRouterHandler(AsyncHTTPTestCase):
         payload = get_message_payload()
         response = self.fetch('/api/%s/store/' % item, method="POST", headers=headers, body=payload)
 
-        expect(response.code).to_equal(200)
-        expect(response.body).to_equal("OK")
-
-        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
-        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("1")
-        expect(response.headers).to_include("X-CYCLOPS-STATUS")
-        expect(response.headers['X-CYCLOPS-STATUS']).to_equal("PROCESSED")
-
-        expect(self.app.processed_items).to_equal(1)
-
-        expect(self.app.storage.get_size(item)).to_equal(1)
-
-        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
-        expect(project_id).to_equal(item)
-        expect(method).to_equal("POST")
-
-        expect(headers).to_include("Host")
-        expect(headers).to_include("Accept-Encoding")
-        expect(headers).to_include("Accept")
-        expect(headers).to_include("User-Agent")
-
-        expected_url = "http://ee0c9d854b294d20a2d6d92d0191cac8:0baca85229c74e0f95d52bea5418ddfd@localhost:9000/api/%s/store/?" % item
-        expect(url).to_equal(expected_url)
-        expect(body).to_equal(payload)
+        self.expect_200(response)
+        self.expect_correct_response_headers(response, 1, "PROCESSED")
+        self.expect_one_processed_item(item, "POST", self.api_store_url(), payload)
 
     def test_post_works_if_gzipped(self):
-        item = self.app.project_keys.keys()[0]
-        key = self.app.project_keys[item]['public_key'][0]
-        secret = self.app.project_keys[item]['secret_key'][0]
-
-        headers = {
-            'X-Sentry-Auth': get_sentry_auth(key, secret)
-        }
-
-        payload = get_post_payload(gzipped=True)
-        response = self.fetch('/api/store/', method="POST", headers=headers, body=payload)
-
-        expect(response.code).to_equal(200)
-        expect(response.body).to_equal("OK")
-
-        expect(self.app.processed_items).to_equal(1)
-
-        expect(self.app.storage.get_size(item)).to_equal(1)
-
-        project_id, method, headers, url, body = msgpack.unpackb(self.app.storage.items_to_process[item].get())
-        expect(project_id).to_equal(item)
-        expect(method).to_equal("POST")
-
-        expect(headers).to_include("Host")
-        expect(headers).to_include("Accept-Encoding")
-        expect(headers).to_include("Accept")
-        expect(headers).to_include("User-Agent")
-
-        expected_url = "http://ee0c9d854b294d20a2d6d92d0191cac8:0baca85229c74e0f95d52bea5418ddfd@localhost:9000/api/store/?"
-        expect(url).to_equal(expected_url)
-        expect(body).to_equal(payload)
+        self.expect_post_works('/api/store/', 2, gzipped=True)
 
     def test_post_valid_project_with_valid_key_ignores(self):
-        item = self.app.project_keys.keys()[0]
-        key = self.app.project_keys[item]['public_key'][0]
-        secret = self.app.project_keys[item]['secret_key'][0]
+        _item, key, secret = self.get_project_keys()
 
         headers = {
             'X-Sentry-Auth': get_sentry_auth(key, secret)
@@ -360,30 +277,14 @@ class TestPostRouterHandler(AsyncHTTPTestCase):
 
         payload = get_post_payload(culprit="some.other.culprit")
 
-        for i in range(self.app.config.MAX_CACHE_USES + 1):
+        for _i in range(self.app.config.MAX_CACHE_USES + 1):
             response = self.fetch('/api/store/', method="POST", headers=headers, body=payload)
 
-        expect(response.code).to_equal(304)
-        expect(response.body).to_be_empty()
-
-        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
-        expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal("11")
-        expect(response.headers).to_include("X-CYCLOPS-STATUS")
-        expect(response.headers['X-CYCLOPS-STATUS']).to_equal("IGNORED")
+        self.expect_304(response)
+        self.expect_correct_response_headers(response, 11, "IGNORED")
 
 
-class TestCountHandler(AsyncHTTPTestCase):
-    def get_app(self):
-        cfg = get_config(
-            CACHE_IMPLEMENTATION_CLASS='cyclops.cache.RedisCache',
-            REDIS_HOST='localhost',
-            REDIS_PORT=7780,
-            REDIS_DB_COUNT=0,
-            REDIS_PASSWORD=None
-        )
-
-        self.app = CyclopsApp(config=cfg)
-        return self.app
+class TestCountHandler(BaseRouterTest):
 
     def test_get_count(self):
         self.app.average_request_time = 10
