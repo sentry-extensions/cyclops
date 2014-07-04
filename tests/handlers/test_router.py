@@ -251,20 +251,6 @@ class TestPostRouterHandler(BaseRouterTest):
         item, _key, _secret = self.get_project_keys()
         self.expect_post_works('/api/%s/store/' % item, 1)
 
-    def test_post_message_works_if_proper(self):
-        item, key, secret = self.get_project_keys()
-
-        headers = {
-            'X-Sentry-Auth': get_sentry_auth(key, secret)
-        }
-
-        payload = get_message_payload()
-        response = self.fetch('/api/%s/store/' % item, method="POST", headers=headers, body=payload)
-
-        self.expect_200(response)
-        self.expect_correct_response_headers(response, 1, "PROCESSED")
-        self.expect_one_processed_item(item, "POST", self.api_store_url(), payload)
-
     def test_post_works_if_gzipped(self):
         self.expect_post_works('/api/store/', 2, gzipped=True)
 
