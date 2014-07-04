@@ -91,6 +91,7 @@ class BaseRouterTest(AsyncHTTPTestCase):
         # self._app is set to self.get_app() in mother setUp() call
         self.app = self._app
         self.app.cache.flushdb()
+        self.valid_project_id = self.app.project_keys.keys()[0]
 
     def get_app(self):
         cfg = get_config(
@@ -123,7 +124,7 @@ class BaseRouterTest(AsyncHTTPTestCase):
         return url
 
     def get_project_keys(self):
-        project_id = self.app.project_keys.keys()[0]
+        project_id = self.valid_project_id
         public_key = self.app.project_keys[project_id]['public_key'][0]
         secret_key = self.app.project_keys[project_id]['secret_key'][0]
         return project_id, public_key, secret_key
@@ -198,8 +199,9 @@ class TestGetRouterHandler(BaseRouterTest):
 
 class TestPostRouterHandler(BaseRouterTest):
 
-    def post_expect_404(self, headers=None, body=None):
-        response = self.fetch('/api/store/', method="POST", headers=headers, body=body)
+    def post_expect_404(self, item=None, headers=None, body=None):
+        url = '/api/store/' if item is None else '/api/%s/store/' % item
+        response = self.fetch(url, method="POST", headers=headers, body=body)
         self.expect_404(response)
 
     def expect_post_works(self, url, gzipped=False):
@@ -245,6 +247,15 @@ class TestPostRouterHandler(BaseRouterTest):
             'X-Sentry-Auth': get_sentry_auth(key, secret)
         }
         self.post_expect_404(headers=headers, body="x=1")
+
+    def test_post_fails_with_valid_project_and_invalid_key(self):
+        item, _key, _secret = self.get_project_keys()
+        key = "allyourbase"
+        secret = "arebelongtous"
+        headers = {
+            'X-Sentry-Auth': get_sentry_auth(key, secret)
+        }
+        self.post_expect_404(item=item, headers=headers, body=get_post_payload())
 
     def test_post_works_if_proper(self):
         self.expect_post_works('/api/store/')

@@ -79,12 +79,12 @@ class BaseRouterHandler(BaseHandler):
 
         sentry_secret = sentry_secret.groups()[0]
 
-        for _project_id, keys in self.application.project_keys.iteritems():
-            if sentry_key in keys['public_key'] and sentry_secret in keys['secret_key']:
-                project_id = _project_id
-                break
-
         if project_id is None:
+            project_id = self.get_project_id(sentry_key, sentry_secret)
+        else:
+            project_id = int(project_id)
+
+        if project_id is None or not self.are_valid_keys(project_id, sentry_key, sentry_secret):
             self._404()
             return
 
@@ -112,6 +112,18 @@ class BaseRouterHandler(BaseHandler):
         self.application.processed_items += 1
 
         self.process_request(project_id, url)
+
+    def get_project_id(self, public_key, secret_key):
+        for project_id, keys in self.application.project_keys.iteritems():
+            if public_key in keys['public_key'] and secret_key in keys['secret_key']:
+                return project_id
+        return None
+
+    def are_valid_keys(self, project_id, public_key, secret_key):
+        keys = self.application.project_keys.get(project_id)
+        if keys is None:
+            return False
+        return public_key in keys['public_key'] and secret_key in keys['secret_key']
 
     def frontend_request(self, project_id):
         if int(project_id) not in self.application.project_keys:
