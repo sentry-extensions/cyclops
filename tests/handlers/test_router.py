@@ -90,6 +90,7 @@ class BaseRouterTest(AsyncHTTPTestCase):
         super(BaseRouterTest, self).setUp()
         # self._app is set to self.get_app() in mother setUp() call
         self.app = self._app
+        self.app.cache.flushdb()
 
     def get_app(self):
         cfg = get_config(
@@ -129,8 +130,8 @@ class BaseRouterTest(AsyncHTTPTestCase):
 
     def expect_correct_response_headers(self,
             response,
-            expected_cache_count,
-            expected_status):
+            expected_status,
+            expected_cache_count=1):
         expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
         expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal(str(expected_cache_count))
         expect(response.headers).to_include("X-CYCLOPS-STATUS")
@@ -177,7 +178,7 @@ class TestGetRouterHandler(BaseRouterTest):
 
         self.expect_200(response)
 
-        self.expect_correct_response_headers(response, 1, "PROCESSED")
+        self.expect_correct_response_headers(response, "PROCESSED")
 
         self.expect_one_processed_item(item, "GET",
                 "localhost:9000/api/1/store/?sentry_key=ee0c9d854b294d20a2d6d92d0191cac8")
@@ -191,7 +192,8 @@ class TestGetRouterHandler(BaseRouterTest):
 
         self.expect_304(response)
 
-        self.expect_correct_response_headers(response, 12, "IGNORED")
+        self.expect_correct_response_headers(response, "IGNORED",
+                expected_cache_count=self.app.config.MAX_CACHE_USES + 1)
 
 
 class TestPostRouterHandler(BaseRouterTest):
@@ -200,7 +202,7 @@ class TestPostRouterHandler(BaseRouterTest):
         response = self.fetch('/api/store/', method="POST", headers=headers, body=body)
         self.expect_404(response)
 
-    def expect_post_works(self, url, expected_cache_count, gzipped=False):
+    def expect_post_works(self, url, gzipped=False):
         item, key, secret = self.get_project_keys()
 
         headers = {
@@ -211,7 +213,7 @@ class TestPostRouterHandler(BaseRouterTest):
         response = self.fetch(url, method="POST", headers=headers, body=payload)
 
         self.expect_200(response)
-        self.expect_correct_response_headers(response, expected_cache_count, "PROCESSED")
+        self.expect_correct_response_headers(response, "PROCESSED")
         self.expect_one_processed_item(item, "POST", self.api_store_url(), payload)
 
     def test_post_fails_if_no_auth_header_supplied(self):
@@ -245,14 +247,14 @@ class TestPostRouterHandler(BaseRouterTest):
         self.post_expect_404(headers=headers, body="x=1")
 
     def test_post_works_if_proper(self):
-        self.expect_post_works('/api/store/', 3)
+        self.expect_post_works('/api/store/')
 
     def test_post_new_url_works_if_proper(self):
         item, _key, _secret = self.get_project_keys()
-        self.expect_post_works('/api/%s/store/' % item, 1)
+        self.expect_post_works('/api/%s/store/' % item)
 
     def test_post_works_if_gzipped(self):
-        self.expect_post_works('/api/store/', 2, gzipped=True)
+        self.expect_post_works('/api/store/', gzipped=True)
 
     def test_post_valid_project_with_valid_key_ignores(self):
         _item, key, secret = self.get_project_keys()
@@ -267,7 +269,8 @@ class TestPostRouterHandler(BaseRouterTest):
             response = self.fetch('/api/store/', method="POST", headers=headers, body=payload)
 
         self.expect_304(response)
-        self.expect_correct_response_headers(response, 11, "IGNORED")
+        self.expect_correct_response_headers(response, "IGNORED",
+                expected_cache_count=self.app.config.MAX_CACHE_USES + 1)
 
 
 class TestCountHandler(BaseRouterTest):
