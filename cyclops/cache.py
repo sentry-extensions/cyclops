@@ -55,3 +55,6 @@ class RedisCache(Cache):
             )
         finally:
             self.lock.release()
+
+    def flushdb(self):
+        self.redis.flushdb()
