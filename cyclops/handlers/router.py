@@ -31,10 +31,10 @@ class BaseRouterHandler(BaseHandler):
 
             count = self.application.cache.incr(url)
             if count > self.application.config.MAX_CACHE_USES:
-                self.set_status(304)
                 self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
                 self.set_header("X-CYCLOPS-STATUS", "IGNORED")
                 self.application.ignored_items += 1
+                self.write("IGNORED")
                 self.finish()
                 return count
 
@@ -145,9 +145,9 @@ class BaseRouterHandler(BaseHandler):
             value = randint(1, 100)
 
             if value < int(self.application.config.IGNORE_PERCENTAGE[project_id]):
-                self.set_status(304)
                 self.set_header("X-CYCLOPS-STATUS", "IGNORED")
                 self.application.ignored_items += 1
+                self.write("IGNORED")
                 self.finish()
                 return
 

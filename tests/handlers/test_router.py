@@ -111,9 +111,9 @@ class BaseRouterTest(AsyncHTTPTestCase):
         expect(response.code).to_equal(200)
         expect(response.body).to_equal("OK")
 
-    def expect_304(self, response):
-        expect(response.code).to_equal(304)
-        expect(response.body).to_be_empty()
+    def expect_200_ignored(self, response):
+        expect(response.code).to_equal(200)
+        expect(response.body).to_equal("IGNORED")
 
     def api_store_url(self, item=None):
         url = "http://ee0c9d854b294d20a2d6d92d0191cac8:0baca85229c74e0f95d52bea5418ddfd@localhost:9000/api/"
@@ -191,7 +191,7 @@ class TestGetRouterHandler(BaseRouterTest):
         for _i in range(self.app.config.MAX_CACHE_USES + 1):
             response = self.fetch('/api/%s/store/?sentry_key=%s' % (item, key))
 
-        self.expect_304(response)
+        self.expect_200_ignored(response)
 
         self.expect_correct_response_headers(response, "IGNORED",
                 expected_cache_count=self.app.config.MAX_CACHE_USES + 1)
@@ -279,7 +279,7 @@ class TestPostRouterHandler(BaseRouterTest):
         for _i in range(self.app.config.MAX_CACHE_USES + 1):
             response = self.fetch('/api/store/', method="POST", headers=headers, body=payload)
 
-        self.expect_304(response)
+        self.expect_200_ignored(response)
         self.expect_correct_response_headers(response, "IGNORED",
                 expected_cache_count=self.app.config.MAX_CACHE_USES + 1)
 
