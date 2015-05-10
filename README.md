@@ -134,6 +134,10 @@ Here is an example configuration file:
     ## projects handled by this Cyclops instance.
     ## Defaults to: None
     #PROJECT_KEYS = None
+    
+    ## If True, accessing API needs valid PROJECT_KEYS
+    ## Defaults to: True
+    ## RESTRICT_API_ACCESS = True
 
     ################################################################################
 
