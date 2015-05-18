@@ -84,9 +84,10 @@ class BaseRouterHandler(BaseHandler):
         else:
             project_id = int(project_id)
 
-        if project_id is None or not self.are_valid_keys(project_id, sentry_key, sentry_secret):
-            self._404()
-            return
+        if self.application.config.RESTRICT_API_ACCESS:
+            if project_id is None or not self.are_valid_keys(project_id, sentry_key, sentry_secret):
+                self._404()
+                return
 
         base_url = self.application.config.SENTRY_BASE_URL.replace('http://', '').replace('https://', '')
         base_url = "%s://%s:%s@%s" % (self.request.protocol, sentry_key, sentry_secret, base_url)
@@ -126,18 +127,19 @@ class BaseRouterHandler(BaseHandler):
         return public_key in keys['public_key'] and secret_key in keys['secret_key']
 
     def frontend_request(self, project_id):
-        if int(project_id) not in self.application.project_keys:
-            self._404()
-            return
+        if self.application.config.RESTRICT_API_ACCESS:
+            if int(project_id) not in self.application.project_keys:
+                self._404()
+                return
 
         project_id = int(project_id)
-
         sentry_key = self.get_argument('sentry_key')
-        if not sentry_key.strip() in self.application.project_keys[project_id]["public_key"]:
-            self.set_status(403)
-            self.write("INVALID KEY")
-            self.finish()
-            return
+        if self.application.config.RESTRICT_API_ACCESS:
+            if not sentry_key.strip() in self.application.project_keys[project_id]["public_key"]:
+                self.set_status(403)
+                self.write("INVALID KEY")
+                self.finish()
+                return
 
         url = "%s%s?%s" % (self.application.config.SENTRY_BASE_URL, self.request.path, self.request.query)
 
