@@ -144,27 +144,30 @@ Here is an example configuration file:
 
     ################################### Database ###################################
 
-    ## Host of your sentry installation MySQL database. Set this to None if you do
+    ## Database backend (either "mysql", "postgres" or "sqlite").
+    #DB_BACKEND = 'mysql'
+
+    ## Host of your sentry installation database. Set this to None if you do
     ## not wish to load project keys from the database. In that case, you will
     ## have to fill the PROJECT_KEYS variable.
     ## Defaults to: localhost
-    #MYSQL_HOST = 'localhost'
+    #DB_HOST = 'localhost'
 
     ## Port of your sentry installation MySQL database.
     ## Defaults to: 3306
-    #MYSQL_PORT = 3306
+    #DB_PORT = 3306
 
-    ## Database of your sentry installation MySQL database.
+    ## Name of your sentry installation MySQL database.
     ## Defaults to: sentry
-    #MYSQL_DB = 'sentry'
+    #DB_NAME = 'sentry'
 
     ## User of your sentry installation MySQL database.
     ## Defaults to: root
-    #MYSQL_USER = 'root'
+    #DB_USER = 'root'
 
     ## Password of your sentry installation MySQL database.
     ## Defaults to: 
-    #MYSQL_PASS = ''
+    #DB_PASS = ''
 
     ################################################################################
 

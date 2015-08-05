@@ -24,11 +24,20 @@ Config.define('IGNORE_PERCENTAGE', {}, 'Use this rate to ignore a percentage of 
 
 Config.define('PROJECT_KEYS', None, 'List of (project_id, public_key, secret_key) tuples that describe the projects handled by this Cyclops instance.', 'Projects')
 Config.define('RESTRICT_API_ACCESS', True, 'If True, validate project keys before sending request to Sentry', 'Projects')
-Config.define('MYSQL_HOST', 'localhost', 'Host of your sentry installation MySQL database. Set this to None if you do not wish to load project keys from the database. In that case, you will have to fill the PROJECT_KEYS variable.', 'Database')
-Config.define('MYSQL_PORT', 3306, 'Port of your sentry installation MySQL database.', 'Database')
-Config.define('MYSQL_DB', 'sentry', 'Database of your sentry installation MySQL database.', 'Database')
-Config.define('MYSQL_USER', 'root', 'User of your sentry installation MySQL database.', 'Database')
-Config.define('MYSQL_PASS', '', 'Password of your sentry installation MySQL database.', 'Database')
+
+Config.define('DB_BACKEND', 'mysql', 'Database backend (either "mysql", "postgres" or "sqlite").')
+Config.define('DB_HOST', 'localhost', 'Host of your sentry installation MySQL database. Set this to None if you do not wish to load project keys from the database. In that case, you will have to fill the PROJECT_KEYS variable.', 'Database')
+Config.define('DB_PORT', 3306, 'Port of your sentry installation MySQL database.', 'Database')
+Config.define('DB_NAME', 'sentry', 'Name of your sentry installation MySQL database.', 'Database')
+Config.define('DB_USER', 'root', 'User of your sentry installation MySQL database.', 'Database')
+Config.define('DB_PASS', '', 'Password of your sentry installation MySQL database.', 'Database')
+
+# Deprecated names
+Config.alias('MYSQL_HOST', 'DB_HOST')
+Config.alias('MYSQL_PORT', 'DB_PORT')
+Config.alias('MYSQL_DB', 'DB_NAME')
+Config.alias('MYSQL_USER', 'DB_USER')
+Config.alias('MYSQL_PASS', 'DB_PASS')
 
 Config.define('URL_CACHE_EXPIRATION', 1, 'The amount of seconds to cache a given URL of error. This is meant to be a way to avoid flooding your sentry farm with repeated errors. Set to 0 if you don\'t want to cache any errors.', 'Cache')
 Config.define('MAX_CACHE_USES', 10, 'Number of requests to accept in the specified expiration of the cache per url.', 'Cache')
