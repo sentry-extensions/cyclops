@@ -10,50 +10,41 @@ class ProjectLoader(object):
 
     def log_info(self):
         logging.info("Connecting to db on {0}:{1} on database {2} with user {3}".format(
-            self.config.MYSQL_HOST,
-            self.config.MYSQL_PORT,
-            self.config.MYSQL_DB,
-            self.config.MYSQL_USER)
+            self.config.DB_HOST,
+            self.config.DB_PORT,
+            self.config.DB_NAME,
+            self.config.DB_USER)
         )
 
     def get_project_keys(self):
         project_keys = {}
-        if self.config.MYSQL_HOST is not None:
-            project_keys.update(self.get_project_keys_from_mysql())
+        if self.config.DB_HOST is not None:
+            project_keys.update(self.get_project_keys_from_db())
         elif self.config.PROJECT_KEYS is not None:
             project_keys.update(self.get_project_keys_from_list())
         if len(project_keys) == 0:
             logging.warning("Empty project key list. You must either fill your"
-                    "MySQL project database or manually define the PROJECT_KEYS"
+                    "project database or manually define the PROJECT_KEYS"
                     "configuration variable")
         return project_keys
 
-    def get_project_keys_from_mysql(self):
-        from torndb import Connection
-        db = Connection(
-            "%s:%s" % (self.config.MYSQL_HOST, self.config.MYSQL_PORT),
-            self.config.MYSQL_DB,
-            user=self.config.MYSQL_USER,
-            password=self.config.MYSQL_PASS
-        )
+    def get_project_keys_from_db(self):
+        from cyclops import db
 
         query = "select project_id, public_key, secret_key from sentry_projectkey"
-        logging.info("Executing query %s in MySQL", query)
+        logging.info("Executing query %s", query)
 
         project_keys = {}
 
-        try:
-            db_projects = db.query(query)
+        db_projects = db.query(query, self.config)
 
-            if db_projects is None:
-                return None
+        if db_projects is None:
+            return None
 
-            for project in db_projects:
-                logging.info("Updating information for project with id %s...", project.project_id)
-                self.add_project(project_keys, project.project_id, project.public_key, project.secret_key)
+        for project in db_projects:
+            logging.info("Updating information for project with id %s...", project['project_id'])
+            self.add_project(project_keys, project['project_id'], project['public_key'], project['secret_key'])
 
-        finally:
-            db.close()
         return project_keys
 
     def get_project_keys_from_list(self):

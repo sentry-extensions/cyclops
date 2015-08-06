@@ -71,6 +71,6 @@ def forget():
 def get_config(*args, **kw):
     if not kw:
         kw = {}
-    kw['MYSQL_DB'] = 'sentry_tests'
+    kw['DB_NAME'] = 'sentry_tests'
 
     return Config(**kw)

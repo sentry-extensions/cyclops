@@ -47,13 +47,16 @@ It keeps items in memory and dumps them at sentry in regular intervals.
     extras_require={
         'tests': tests_require,
         'mysql': mysql_requires,
+        'postgres': [
+            'psycopg2',
+        ],
     },
 
     install_requires=[
         'tornado>=3.0.0',
         'derpconf==0.3.3',
         'pycurl==7.19.0',
-        'requests==1.1.0',
+        'requests',
         'ujson==1.30',
         'msgpack-python==0.3.0',
         'redis==2.7.2',
