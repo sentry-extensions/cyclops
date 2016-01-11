@@ -237,32 +237,33 @@ Cyclops allows users to specify any storage mechanism they want for storing mess
 
 A storage class has to implement the following interface:
 
-    def __init__(self, application):
-        # stores application for further usage
-        # and does any initialization needed
+```python
+def __init__(self, application):
+    # stores application for further usage
+    # and does any initialization needed
 
-    def put(self, project_id, message):
-        # stores the message for later processing for the given project
+def put(self, project_id, message):
+    # stores the message for later processing for the given project
 
-    def get_size(self, project_id):
-        # returns the size of the "queue" for a given project
+def get_size(self, project_id):
+    # returns the size of the "queue" for a given project
 
-    def get_next_message(self):
-        # gets the next message to process, independent of project
-        # usually this is done in a round-robin fashion among projects
+def get_next_message(self):
+    # gets the next message to process, independent of project
+    # usually this is done in a round-robin fashion among projects
 
-    def mark_as_done(self, project_id):
-        # indicates to the "queue" that this message is done processing
-        # which means it has been sent to sentry
+def mark_as_done(self, project_id):
+    # indicates to the "queue" that this message is done processing
+    # which means it has been sent to sentry
 
-    @property
-    def total_size(self):
-        # returns the total size of all project queues
+@property
+def total_size(self):
+    # returns the total size of all project queues
 
-    @property
-    def available_queues(self):
-        # returns a list of project ids
-
+@property
+def available_queues(self):
+    # returns a list of project ids
+```
 
 Caching
 =======
@@ -281,20 +282,21 @@ It might seem weird to process only 1% of the error requests (1000 reqs/sec and 
 
 Implementing a Custom Cache is very simple, even though Cyclops comes bundled with a very efficient Redis cache implementation. Your cache needs to conform to this interface:
 
-    def __init__(self, application):
-        # stores application for further usage
-        # and does any initialization needed
+```python
+def __init__(self, application):
+    # stores application for further usage
+    # and does any initialization needed
 
-    def get(self, key):
-        # gets a key usages.
-        # should return an integer if key is found, None otherwise
+def get(self, key):
+    # gets a key usages.
+    # should return an integer if key is found, None otherwise
 
-    def incr(self, key):
-        # should increment the number of times a key has been used by 1
+def incr(self, key):
+    # should increment the number of times a key has been used by 1
 
-    def set(self, key, expiration):
-        # should set a key to 0 and set it's expiration to "expiration" seconds
-
+def set(self, key, expiration):
+    # should set a key to 0 and set it's expiration to "expiration" seconds
+```
 
 cyclops-count
 =============
