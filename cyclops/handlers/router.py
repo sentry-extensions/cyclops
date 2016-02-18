@@ -41,8 +41,10 @@ class BaseRouterHandler(BaseHandler):
         return count
 
     def process_request(self, project_id, url):
-        headers = self.request.headers
+        headers = {}
         body = self.request.body
+        for k, v in sorted(self.request.headers.get_all()):
+            headers[k] = v
 
         message = (
             project_id,
