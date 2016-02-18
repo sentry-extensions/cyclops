@@ -53,9 +53,9 @@ It keeps items in memory and dumps them at sentry in regular intervals.
     },
 
     install_requires=[
-        'tornado>=3.0.0',
+        'tornado>=3.0.0,<4',
         'derpconf==0.3.3',
-        'pycurl==7.19.0',
+        'pycurl>=7.19.5.1,<7.20',
         'requests',
         'ujson==1.30',
         'msgpack-python==0.3.0',
