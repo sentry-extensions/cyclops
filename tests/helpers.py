@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import time
+import os
 
 from cyclops.config import Config
 from cyclops.app import BaseApp
@@ -72,5 +73,9 @@ def get_config(*args, **kw):
     if not kw:
         kw = {}
     kw['DB_NAME'] = 'sentry_tests'
+    env_prefix = 'CYCLOPS_TEST_'
+    for env_name, env_value in os.environ.items():
+        if env_name.startswith('CYCLOPS_TEST_') and len(env_name) > len(env_prefix):
+            kw[env_name[len(env_prefix):]] = env_value
 
     return Config(**kw)
