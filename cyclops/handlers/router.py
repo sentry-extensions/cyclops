@@ -8,6 +8,7 @@ from random import randint
 
 import tornado.web
 from ujson import dumps, loads
+from cyclops.hash_calculator import hash_for_grouping
 #import msgpack
 
 from cyclops.handlers.base import BaseHandler
@@ -100,10 +101,7 @@ class BaseRouterHandler(BaseHandler):
         except ValueError:
             payload = loads(decompress(b64decode(self.request.body)))
 
-        if 'culprit' in payload:
-            message_key = payload['culprit']
-        else:
-            message_key = payload['message']
+        message_key = hash_for_grouping(payload)
 
         cache_key = "%s:%s" % (project_id, message_key)
         count = self.validate_cache(cache_key)
