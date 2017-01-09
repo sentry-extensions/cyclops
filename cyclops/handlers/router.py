@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
-from zlib import decompress
+from zlib import decompress, MAX_WBITS
 from base64 import b64decode
 from random import randint
 
@@ -98,7 +98,7 @@ class BaseRouterHandler(BaseHandler):
         try:
             payload = loads(self.request.body)
         except ValueError:
-            payload = loads(decompress(b64decode(self.request.body)))
+            payload = loads(decompress(self.request.body, MAX_WBITS|32))
 
         if 'culprit' in payload:
             message_key = payload['culprit']
