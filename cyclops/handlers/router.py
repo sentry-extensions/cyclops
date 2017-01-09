@@ -96,9 +96,9 @@ class BaseRouterHandler(BaseHandler):
         url = "%s%s?%s" % (base_url, self.request.path, self.request.query)
 
         try:
-            payload = loads(self.request.body)
-        except ValueError:
             payload = loads(decompress(self.request.body, MAX_WBITS|32))
+        except ValueError:
+            payload = loads(self.request.body)
 
         if 'culprit' in payload:
             message_key = payload['culprit']
