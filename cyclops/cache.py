@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import redis
-from redis_lock import RedisLock
 
 
 class Cache(object):
@@ -43,8 +42,8 @@ class RedisCache(Cache):
         return self.redis.incr(key)
 
     def set(self, key, expiration):
-        self.lock = RedisLock(self.redis, lock_key='cyclops:lock:%s' % key, lock_timeout=5*60)
-        if not self.lock.acquire():
+        self.lock = self.redis.lock('cyclops:lock:%s' % key, timeout=5*60)
+        if not self.lock.acquire(blocking=False):
             return
 
         try:

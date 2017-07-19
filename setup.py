@@ -59,8 +59,7 @@ It keeps items in memory and dumps them at sentry in regular intervals.
         'requests',
         'ujson==1.30',
         'msgpack-python==0.3.0',
-        'redis==2.7.2',
-        'redis-lock==0.2.0',
+        'redis',
         'argparse==1.2.1',
     ],
 
