@@ -163,7 +163,15 @@ class BaseRouterHandler(BaseHandler):
                 self.finish()
                 return
 
-        count = self.validate_cache(url)
+        try:
+            payload = loads(self.request.body)
+        except ValueError:
+            payload = loads(decompress(b64decode(self.request.body)))
+
+        message_key = hash_for_grouping(payload)
+
+        cache_key = "%s:%s" % (project_id, message_key)
+        count = self.validate_cache(cache_key)
         if count > self.application.config.MAX_CACHE_USES:
             return
 
