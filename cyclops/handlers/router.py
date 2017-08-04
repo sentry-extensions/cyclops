@@ -171,7 +171,13 @@ class RouterHandler(BaseRouterHandler):
 
     @tornado.web.asynchronous
     def post(self, project_id=None):
-        self.backend_request(project_id)
+        auth = self.request.headers.get('X-Sentry-Auth')
+        if auth:
+            # backend client uses private DSN and sends key and sectet in X-Sentry-Auth header
+            self.backend_request(project_id)
+        else:
+            # browser based client uses public DSN and sends only key in QUERY_STRING
+            self.frontend_request(project_id)
 
 class OldRouterHandler(BaseRouterHandler):
     @tornado.web.asynchronous
