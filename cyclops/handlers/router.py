@@ -124,6 +124,7 @@ class BaseRouterHandler(BaseHandler):
         keys = self.application.project_keys.get(project_id)
         if keys is None:
             return False
+
         return public_key in keys['public_key'] and secret_key in keys['secret_key']
 
     def frontend_request(self, project_id):
@@ -132,6 +133,15 @@ class BaseRouterHandler(BaseHandler):
                 self._404()
                 return
 
+        # CORS headers
+        origin = self.request.headers.get('Origin')
+        if origin:
+            self.set_header("Access-Control-Allow-Headers", "X-Sentry-Auth, X-Requested-With, Origin, Accept, Content-Type, Authentication")
+            self.set_header("Access-Control-Allow-Methods", "GET, POST, HEAD, OPTIONS")
+            self.set_header("Access-Control-Allow-Origin", origin)
+            self.set_header("Access-Control-Expose-Headers", "X-Sentry-Error, Retry-After")
+
+        # Check public key
         project_id = int(project_id)
         sentry_key = self.get_argument('sentry_key')
         if self.application.config.RESTRICT_API_ACCESS:
