@@ -62,7 +62,7 @@ class BaseRouterHandler(BaseHandler):
         self.write("OK")
         self.finish()
 
-    def backend_request(self, project_id=None):
+    def handle_backend_post_request(self, project_id=None):
         auth = self.request.headers.get('X-Sentry-Auth')
         if not auth:
             self._404()
@@ -127,7 +127,43 @@ class BaseRouterHandler(BaseHandler):
 
         return public_key in keys['public_key'] and secret_key in keys['secret_key']
 
-    def frontend_request(self, project_id):
+    def handle_get_request(self, project_id):
+        if self.application.config.RESTRICT_API_ACCESS:
+            if int(project_id) not in self.application.project_keys:
+                self._404()
+                return
+
+        project_id = int(project_id)
+        sentry_key = self.get_argument('sentry_key')
+        if self.application.config.RESTRICT_API_ACCESS:
+            if not sentry_key.strip() in self.application.project_keys[project_id]["public_key"]:
+                self.set_status(403)
+                self.write("INVALID KEY")
+                self.finish()
+                return
+
+        url = "%s%s?%s" % (self.application.config.SENTRY_BASE_URL, self.request.path, self.request.query)
+
+        if project_id in self.application.config.IGNORE_PERCENTAGE:
+            value = randint(1, 100)
+
+            if value < int(self.application.config.IGNORE_PERCENTAGE[project_id]):
+                self.set_header("X-CYCLOPS-STATUS", "IGNORED")
+                self.application.ignored_items += 1
+                self.write("IGNORED")
+                self.finish()
+                return
+
+        count = self.validate_cache(url)
+        if count > self.application.config.MAX_CACHE_USES:
+            return
+
+        self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
+        self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
+        self.application.processed_items += 1
+        self.process_request(project_id, url)
+
+    def handle_frontend_post_request(self, project_id):
         if self.application.config.RESTRICT_API_ACCESS:
             if int(project_id) not in self.application.project_keys:
                 self._404()
@@ -180,27 +216,25 @@ class BaseRouterHandler(BaseHandler):
         self.application.processed_items += 1
         self.process_request(project_id, url)
 
-
-
 class RouterHandler(BaseRouterHandler):
     @tornado.web.asynchronous
-    def get(self, project_id):
-        self.frontend_request(project_id)
+    def get(self, project_id=None):
+        self.handle_get_request(project_id)
 
     @tornado.web.asynchronous
     def post(self, project_id=None):
         auth = self.request.headers.get('X-Sentry-Auth')
         if auth:
-            # backend client uses private DSN and sends key and sectet in X-Sentry-Auth header
-            self.backend_request(project_id)
+            # backend client uses private DSN and sends key and secret in X-Sentry-Auth header
+            self.handle_backend_post_request(project_id)
         else:
             # browser based client uses public DSN and sends only key in QUERY_STRING
-            self.frontend_request(project_id)
+            self.handle_frontend_post_request(project_id)
 
 class OldRouterHandler(BaseRouterHandler):
     @tornado.web.asynchronous
     def post(self):
-        self.backend_request()
+        self.handle_backend_post_request()
 
 
 class CountHandler(BaseHandler):

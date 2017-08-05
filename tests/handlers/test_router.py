@@ -58,6 +58,75 @@ def get_message_payload():
             }
     return dumps(message)
 
+
+def get_frontend_payload(item):
+    return dumps({
+        "project": item,
+        "logger": "jsApp",
+        "platform": "javascript",
+        "request": {
+            "headers": {
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36"
+            },
+            "url": "http://server.com/"
+        },
+        "exception": {
+            "values": [
+                {
+                    "type": "Error",
+                    "value": "hello",
+                    "stacktrace": {
+                        "frames": [
+                            {
+                                "filename": "http://server.com/script.js",
+                                "lineno": 60,
+                                "colno": 31,
+                                "function": "Object.logger.(anonymous function) [as error]",
+                                "in_app": True
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "culprit": "http://server.com/script.js",
+        "level": "error",
+        "extra": {
+            "session:duration": 2983022
+        },
+        "breadcrumbs": {
+            "values": [
+                {
+                    "timestamp": 1501831476.83,
+                    "message": "router: [object Object]",
+                    "level": "log",
+                    "category": "console"
+                },
+                {
+                    "timestamp": 1501831536.796,
+                    "message": "Track: [object Object]",
+                    "level": "info",
+                    "category": "console"
+                },
+                {
+                    "timestamp": 1501834459.44,
+                    "message": "hello ",
+                    "level": "error",
+                    "category": "console"
+                }
+            ]
+        },
+        "user": {
+            "id": None,
+            "name": None,
+            "email": None
+        },
+        "environment": "webSite",
+        "release": "v.12.3.4",
+        "event_id": "a01391a50ee647678d678abbfa24ceb8"
+    });
+
+
 def get_post_payload(
         event_id="fc6d8c0c43fc4630ad850ee518f1b9d0",
         culprit="my.module.function_name",
@@ -218,6 +287,16 @@ class TestPostRouterHandler(BaseRouterTest):
         self.expect_correct_response_headers(response, "PROCESSED")
         self.expect_one_processed_item(item, "POST", self.api_store_url(), payload)
 
+    def expect_frontend_post_works(self, url, gzipped=False):
+        item, key, secret = self.get_project_keys()
+
+        payload = get_frontend_payload(item)
+        response = self.fetch(url, method="POST", body=payload)
+
+        self.expect_200(response)
+        self.expect_correct_response_headers(response, "PROCESSED")
+        self.expect_one_processed_item(item, "POST", self.api_store_url(), payload)
+
     def test_post_fails_if_no_auth_header_supplied(self):
         response = self.fetch('/api/store/', method="POST", body="x=1")
         self.expect_404(response)
@@ -282,6 +361,10 @@ class TestPostRouterHandler(BaseRouterTest):
         self.expect_200_ignored(response)
         self.expect_correct_response_headers(response, "IGNORED",
                 expected_cache_count=self.app.config.MAX_CACHE_USES + 1)
+
+    def test_frontend_post_valid(self):
+        item, _key, _secret = self.get_project_keys()
+        self.expect_frontend_post_works('/api/%s/store/?sentry_version=7&sentry_client=raven-js/3.17.0&sentry_key=%s' % (item, _key))
 
 
 class TestCountHandler(BaseRouterTest):
