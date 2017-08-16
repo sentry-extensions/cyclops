@@ -133,9 +133,9 @@ class BaseRouterTest(AsyncHTTPTestCase):
             response,
             expected_status,
             expected_cache_count=1):
-        expect(response.headers).to_include("X-CYCLOPS-CACHE-COUNT")
+        expect('X-CYCLOPS-CACHE-COUNT' in response.headers).to_be_true()
         expect(response.headers['X-CYCLOPS-CACHE-COUNT']).to_equal(str(expected_cache_count))
-        expect(response.headers).to_include("X-CYCLOPS-STATUS")
+        expect('X-CYCLOPS-STATUS' in response.headers).to_be_true()
         expect(response.headers['X-CYCLOPS-STATUS']).to_equal(expected_status)
 
     def expect_one_processed_item(self, item,

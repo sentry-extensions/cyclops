@@ -469,6 +469,18 @@ We have a server running in production for a month now and these are the logs (w
 
 As you can see, that's more than 320 million events handled.
 
+Testing
+============
+
+To run tests execute
+    $ make test
+
+redis and mysql server must be installed to run tests. By default tests are trying to communicate with redis and mysql
+on localhost, mysql user should be `root` with empty password. You may redefine some values by running tests with
+corresponding options
+
+    $ CYCLOPS_TEST_DB_HOST=youhost.com CYCLOPS_TEST_DB_USER=cyclops_user CYCLOPS_TEST_DB_PASS=password CYCLOPS_TEST_DB_PORT=12345 make test
+
 Contributing
 ============
 
