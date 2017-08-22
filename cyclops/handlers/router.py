@@ -88,10 +88,8 @@ class BaseRouterHandler(BaseHandler):
                 self._404()
                 is_accessible = False
 
-            # get public key
-            sentry_key = self.get_argument('sentry_key').strip()
-
             # check public key
+            sentry_key = self.get_argument('sentry_key').strip()
             if sentry_key not in self.application.project_keys[project_id]["public_key"]:
                 self._403()
                 is_accessible = False
