@@ -23,25 +23,41 @@ class BaseRouterHandler(BaseHandler):
         self.set_status(404)
         self.finish()
 
-    def validate_cache(self, url):
+    def get_cache_key(self, project_id, request_body):
+        try:
+            payload = loads(request_body)
+        except ValueError:
+            payload = loads(decompress(b64decode(request_body)))
+
+        message_key = hash_for_grouping(payload)
+        cache_key = "%s:%s" % (project_id, message_key)
+        return cache_key
+
+    def validate_cache(self, project_id, request_body):
         count = 0
 
         if self.application.config.URL_CACHE_EXPIRATION > 0:
-            if self.application.cache.get(url) is None:
-                self.application.cache.set(url, self.application.config.URL_CACHE_EXPIRATION)
+            cache_key = self.get_cache_key(project_id, request_body)
 
-            count = self.application.cache.incr(url)
+            if self.application.cache.get(cache_key) is None:
+                self.application.cache.set(cache_key, self.application.config.URL_CACHE_EXPIRATION)
+
+            count = self.application.cache.incr(cache_key)
+            self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
+
             if count > self.application.config.MAX_CACHE_USES:
-                self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
                 self.set_header("X-CYCLOPS-STATUS", "IGNORED")
                 self.application.ignored_items += 1
                 self.write("IGNORED")
                 self.finish()
-                return count
+            else:
+                self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
 
         return count
 
     def process_request(self, project_id, url):
+        self.application.processed_items += 1
+
         headers = {}
         body = self.request.body
         for k, v in sorted(self.request.headers.get_all()):
@@ -63,11 +79,13 @@ class BaseRouterHandler(BaseHandler):
         self.finish()
 
     def handle_backend_post_request(self, project_id=None):
+        # check if auth token passed
         auth = self.request.headers.get('X-Sentry-Auth')
         if not auth:
             self._404()
             return
 
+        # check if auth key valid
         sentry_key = SENTRY_KEY.search(auth)
         if not sentry_key:
             self._404()
@@ -75,6 +93,7 @@ class BaseRouterHandler(BaseHandler):
 
         sentry_key = sentry_key.groups()[0]
 
+        # check if auth secret valid
         sentry_secret = SENTRY_SECRET.search(auth)
         if not sentry_secret:
             self._404()
@@ -82,36 +101,29 @@ class BaseRouterHandler(BaseHandler):
 
         sentry_secret = sentry_secret.groups()[0]
 
+        # get project
         if project_id is None:
             project_id = self.get_project_id(sentry_key, sentry_secret)
         else:
             project_id = int(project_id)
 
+        # check project in restrict api list
         if self.application.config.RESTRICT_API_ACCESS:
             if project_id is None or not self.are_valid_keys(project_id, sentry_key, sentry_secret):
                 self._404()
                 return
 
+        # generate sentry url
         base_url = self.application.config.SENTRY_BASE_URL.replace('http://', '').replace('https://', '')
         base_url = "%s://%s:%s@%s" % (self.request.protocol, sentry_key, sentry_secret, base_url)
         url = "%s%s?%s" % (base_url, self.request.path, self.request.query)
 
-        try:
-            payload = loads(self.request.body)
-        except ValueError:
-            payload = loads(decompress(b64decode(self.request.body)))
-
-        message_key = hash_for_grouping(payload)
-
-        cache_key = "%s:%s" % (project_id, message_key)
-        count = self.validate_cache(cache_key)
+        # check cache usage
+        count = self.validate_cache(project_id, self.request.body)
         if count > self.application.config.MAX_CACHE_USES:
             return
 
-        self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
-        self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
-        self.application.processed_items += 1
-
+        # handle request
         self.process_request(project_id, url)
 
     def get_project_id(self, public_key, secret_key):
@@ -127,48 +139,7 @@ class BaseRouterHandler(BaseHandler):
 
         return public_key in keys['public_key'] and secret_key in keys['secret_key']
 
-    def handle_get_request(self, project_id):
-        if self.application.config.RESTRICT_API_ACCESS:
-            if int(project_id) not in self.application.project_keys:
-                self._404()
-                return
-
-        project_id = int(project_id)
-        sentry_key = self.get_argument('sentry_key')
-        if self.application.config.RESTRICT_API_ACCESS:
-            if not sentry_key.strip() in self.application.project_keys[project_id]["public_key"]:
-                self.set_status(403)
-                self.write("INVALID KEY")
-                self.finish()
-                return
-
-        url = "%s%s?%s" % (self.application.config.SENTRY_BASE_URL, self.request.path, self.request.query)
-
-        if project_id in self.application.config.IGNORE_PERCENTAGE:
-            value = randint(1, 100)
-
-            if value < int(self.application.config.IGNORE_PERCENTAGE[project_id]):
-                self.set_header("X-CYCLOPS-STATUS", "IGNORED")
-                self.application.ignored_items += 1
-                self.write("IGNORED")
-                self.finish()
-                return
-
-        count = self.validate_cache(url)
-        if count > self.application.config.MAX_CACHE_USES:
-            return
-
-        self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
-        self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
-        self.application.processed_items += 1
-        self.process_request(project_id, url)
-
     def handle_frontend_post_request(self, project_id):
-        if self.application.config.RESTRICT_API_ACCESS:
-            if int(project_id) not in self.application.project_keys:
-                self._404()
-                return
-
         # CORS headers
         origin = self.request.headers.get('Origin')
         if origin:
@@ -177,7 +148,13 @@ class BaseRouterHandler(BaseHandler):
             self.set_header("Access-Control-Allow-Origin", origin)
             self.set_header("Access-Control-Expose-Headers", "X-Sentry-Error, Retry-After")
 
-        # Check public key
+        # check project in restrict api list
+        if self.application.config.RESTRICT_API_ACCESS:
+            if int(project_id) not in self.application.project_keys:
+                self._404()
+                return
+
+        # check public key
         project_id = int(project_id)
         sentry_key = self.get_argument('sentry_key')
         if self.application.config.RESTRICT_API_ACCESS:
@@ -187,8 +164,10 @@ class BaseRouterHandler(BaseHandler):
                 self.finish()
                 return
 
+        # generate sentry url
         url = "%s%s?%s" % (self.application.config.SENTRY_BASE_URL, self.request.path, self.request.query)
 
+        # ignore by percentage
         if project_id in self.application.config.IGNORE_PERCENTAGE:
             value = randint(1, 100)
 
@@ -199,27 +178,58 @@ class BaseRouterHandler(BaseHandler):
                 self.finish()
                 return
 
-        try:
-            payload = loads(self.request.body)
-        except ValueError:
-            payload = loads(decompress(b64decode(self.request.body)))
-
-        message_key = hash_for_grouping(payload)
-
-        cache_key = "%s:%s" % (project_id, message_key)
-        count = self.validate_cache(cache_key)
+        # check cache usage
+        count = self.validate_cache(project_id, self.request.body)
         if count > self.application.config.MAX_CACHE_USES:
             return
 
-        self.set_header("X-CYCLOPS-CACHE-COUNT", str(count))
-        self.set_header("X-CYCLOPS-STATUS", "PROCESSED")
-        self.application.processed_items += 1
+        # handle request
         self.process_request(project_id, url)
+
+    def handle_frontend_get_request(self, project_id):
+        # check project in restrict api list
+        if self.application.config.RESTRICT_API_ACCESS:
+            if int(project_id) not in self.application.project_keys:
+                self._404()
+                return
+
+        # check public key
+        project_id = int(project_id)
+        sentry_key = self.get_argument('sentry_key')
+        if self.application.config.RESTRICT_API_ACCESS:
+            if not sentry_key.strip() in self.application.project_keys[project_id]["public_key"]:
+                self.set_status(403)
+                self.write("INVALID KEY")
+                self.finish()
+                return
+
+        # generate sentry url
+        url = "%s%s?%s" % (self.application.config.SENTRY_BASE_URL, self.request.path, self.request.query)
+
+        # ignore by percentage
+        if project_id in self.application.config.IGNORE_PERCENTAGE:
+            value = randint(1, 100)
+
+            if value < int(self.application.config.IGNORE_PERCENTAGE[project_id]):
+                self.set_header("X-CYCLOPS-STATUS", "IGNORED")
+                self.application.ignored_items += 1
+                self.write("IGNORED")
+                self.finish()
+                return
+
+        # check cache usage
+        count = self.validate_cache(project_id, self.get_argument('sentry_data'))
+        if count > self.application.config.MAX_CACHE_USES:
+            return
+
+        # handle request
+        self.process_request(project_id, url)
+
 
 class RouterHandler(BaseRouterHandler):
     @tornado.web.asynchronous
     def get(self, project_id=None):
-        self.handle_get_request(project_id)
+        self.handle_frontend_get_request(project_id)
 
     @tornado.web.asynchronous
     def post(self, project_id=None):

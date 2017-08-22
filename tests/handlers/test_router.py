@@ -244,21 +244,22 @@ class TestGetRouterHandler(BaseRouterTest):
     def test_get_valid_project_with_valid_key(self):
         item = self.app.project_keys.keys()[0]
         key = self.app.project_keys[item]['public_key'][0]
-        response = self.fetch('/api/%s/store/?sentry_key=%s' % (item, key))
+        url = '/api/%s/store/?sentry_key=%s&sentry_data=%s' % (item, key, "%7B%7D")
+        response = self.fetch(url)
 
         self.expect_200(response)
 
         self.expect_correct_response_headers(response, "PROCESSED")
 
         self.expect_one_processed_item(item, "GET",
-                "localhost:9000/api/1/store/?sentry_key=ee0c9d854b294d20a2d6d92d0191cac8")
+                "localhost:9000/api/1/store/?sentry_key=ee0c9d854b294d20a2d6d92d0191cac8&sentry_data=%7B%7D")
 
     def test_get_valid_project_with_valid_key_ignores(self):
         item = self.app.project_keys.keys()[0]
         key = self.app.project_keys[item]['public_key'][0]
 
         for _i in range(self.app.config.MAX_CACHE_USES + 1):
-            response = self.fetch('/api/%s/store/?sentry_key=%s' % (item, key))
+            response = self.fetch('/api/%s/store/?sentry_key=%s&sentry_data=%s' % (item, key, "%7B%7D"))
 
         self.expect_200_ignored(response)
 
