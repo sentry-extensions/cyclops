@@ -1,6 +1,6 @@
 ![Cyclops is meant to be a high performance barrier in front of [sentry](http://getsentry.com)](/logo.png)
 
-[![Build Status](https://travis-ci.org/heynemann/cyclops.png?branch=master)](https://travis-ci.org/heynemann/cyclops)
+[![Build Status](https://travis-ci.org/sentry-extensions/cyclops.png?branch=master)](https://travis-ci.org/sentry-extensions/cyclops)
 
 Disclaimer
 ==========
