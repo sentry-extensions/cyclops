@@ -208,6 +208,8 @@ Here is an example configuration file:
 
     ################################################################################
 
+Each setting can also be set/overridden by using environment variables named the same as the configuration setting.
+
 The Routes
 ==========
 

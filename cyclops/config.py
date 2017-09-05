@@ -4,6 +4,7 @@
 from derpconf.config import Config, generate_config
 
 MINUTES = 60
+Config.allow_environment_variables()
 
 Config.define('HEALTHCHECK_TEXT', 'WORKING', 'Cyclops has a /healthcheck route. This allows load balancers to ping it to see if the process is still alive. This option defines the text that the /healthcheck route prints.', 'General')
 Config.define('SENTRY_BASE_URL', 'localhost:9000', 'Sentry server name. This is the base URL that Cyclops will use to send requests to sentry.', 'General')
