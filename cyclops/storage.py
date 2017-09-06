@@ -60,7 +60,7 @@ class RedisStorage(object):
 
         self.redis = redis.StrictRedis(
             host=self.application.config.REDIS_HOST,
-            port=self.application.config.REDIS_PORT,
+            port=int(self.application.config.REDIS_PORT),
             db=self.application.config.REDIS_DB_COUNT,
             password=self.application.config.REDIS_PASSWORD
         )
