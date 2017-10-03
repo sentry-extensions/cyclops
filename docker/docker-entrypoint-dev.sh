@@ -15,4 +15,3 @@ service mysql start
 /usr/local/bin/redis-server /etc/redis.conf
 
 tail -F /var/log/mysql/error.log
-
