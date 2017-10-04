@@ -276,7 +276,7 @@ Consider what would happen if you had a page that gets hit 1000 times each secon
 
 Cyclops uses the caching implementation to prevent that. If it detects that the given key (for GET requests it's the URL, for POST requests it's the Project Id + Culprit) has been processed more than `MAX_CACHE_USES` in the last `URL_CACHE_EXPIRATION` seconds it will discard it.
 
-Consider an expiration of 1 second with 10 max cache uses. This means that if the same key arrives more than 10 times each second, the 11th, 12th and so on will be discarded. After the second ellapses, the cache key is discarded and we start processing messages again.
+Consider an expiration of 1 second with 10 max cache uses. This means that if the same key arrives more than 10 times each second, the 11th, 12th and so on will be discarded. After the second ellipsis, the cache key is discarded and we start processing messages again.
 
 It might seem weird to process only 1% of the error requests (1000 reqs/sec and we process 10/sec), but most likely that 1% should be enough info to allow you to fix the problem.
 
