@@ -14,7 +14,7 @@ sudo: false
 addons:
   apt:
     packages:
-      - mysql-server
+      - mysql
       - python-dev
       - libmysqlclient-dev
       - redis-server
