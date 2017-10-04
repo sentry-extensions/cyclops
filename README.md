@@ -211,7 +211,7 @@ Here is an example configuration file:
 The Routes
 ==========
 
-Cyclops mymics the `api/store` routes in sentry. Both the `GET` and `POST` routes.
+Cyclops mimics the `api/store` routes in sentry. Both the `GET` and `POST` routes.
 
 You can send the errors to Cyclops in *EXACTLY* the same way you would send to sentry.
 
