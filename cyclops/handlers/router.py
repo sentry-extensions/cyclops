@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
-from zlib import decompress
+from zlib import decompress, MAX_WBITS
 from base64 import b64decode
 from random import randint
 
@@ -97,9 +97,9 @@ class BaseRouterHandler(BaseHandler):
         url = "%s%s?%s" % (base_url, self.request.path, self.request.query)
 
         try:
-            payload = loads(self.request.body)
+            payload = loads(decompress(self.request.body, MAX_WBITS|32))
         except ValueError:
-            payload = loads(decompress(b64decode(self.request.body)))
+            payload = loads(self.request.body)
 
         message_key = hash_for_grouping(payload)
 
