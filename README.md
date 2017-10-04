@@ -109,7 +109,7 @@ Here is an example configuration file:
     ## This is done using a percentile average of 90% of the last sentry requests
     ## time. If those requests were serviced in 30ms average, then cyclops will
     ## keep sending requests every 30ms. This setting specify a maximum interval
-    ## in miliseconds to send requests to sentry.
+    ## in milliseconds to send requests to sentry.
     ## Defaults to: 1000
     #MAX_DUMP_INTERVAL = 1000
 
