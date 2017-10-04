@@ -1,0 +1,49 @@
+# cyclops dev environment
+#
+# NOTE: This should not be used in production!
+#
+# Instructions:
+#
+#   Build the container:
+#     $ docker build --rm -t cyclops:dev -f Dockerfile.dev .
+#   Bootstrap the container:
+#     $ docker run --rm -d --name=cyclops-dev -v $PWD:/opt/cyclops cyclops:dev
+#   Run the container:
+#     $ docker start cyclops-dev
+#   Attach into the container:
+#     $ docker exec -it cyclops-dev bash
+#   Stop container:
+#     $ docker stop cyclops-dev
+#   Remove container:
+#     $ docker rm -f cyclops-dev
+#
+#   Install dependencies and run tests (after start of container and login into it):
+#     $ cd /opt/cyclops
+#     $ pip install -e . -e .[mysql] -e .[tests]
+#     $ CYCLOPS_TEST_DB_USER=sentry CYCLOPS_TEST_DB_PASS=sentry make tests
+
+FROM mysql:5.7
+
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential tcl curl wget vim python2.7 python3.4 python-pip python-dev python3-dev libssl-dev libcurl4-openssl-dev libmysqlclient-dev
+
+RUN mkdir -p /tmp/redis-server
+RUN curl -s http://download.redis.io/releases/redis-3.2.10.tar.gz | tar -xzf - -C /tmp/redis-server --strip-components=1
+RUN cd /tmp/redis-server && make && make install
+RUN sed '/^#/ d ; /^$/ d  ; s/^dir \.\//dir \/var\/lib\/redis/ ; s/^daemonize no/daemonize no/' /tmp/redis-server/redis.conf > /etc/redis.conf
+RUN rm -rf /tmp/redis-server
+RUN cat /etc/redis.conf
+RUN adduser --system --group --no-create-home redis
+RUN mkdir /var/lib/redis /var/log/redis
+RUN chown redis:redis /var/lib/redis /var/log/redis
+RUN chmod 770 /var/lib/redis && chmod 755 /var/log/redis
+
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
+RUN mkdir -p /opt/cyclops
+
+COPY docker/docker-entrypoint-dev.sh /usr/bin/docker-entrypoint.sh
+COPY docker/post-install-dev.sh /usr/bin/post-install.sh
+
+WORKDIR /opt/cyclops
+
+EXPOSE 6379 3306
+ENTRYPOINT bash /usr/bin/docker-entrypoint.sh
