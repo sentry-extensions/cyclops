@@ -21,7 +21,6 @@ class ProjectsUpdateTask(object):
         periodic_task = PeriodicCallback(
             self.update,
             self.application.config.UPDATE_PERIOD * 1000,
-            io_loop=self.main_loop
         )
         periodic_task.start()
 
@@ -42,7 +41,6 @@ class SendToSentryTask(object):
         periodic_task = PeriodicCallback(
             self.update,
             20,
-            io_loop=self.main_loop
         )
         periodic_task.start()
 
@@ -103,7 +101,7 @@ class SendToSentryTask(object):
             logging.debug("Sending to sentry at %s", url)
             self.start_time = time.time()
             self.last_sent = time.time()
-            http_client = AsyncHTTPClient(io_loop=self.main_loop)
+            http_client = AsyncHTTPClient()
             http_client.fetch(request, self.get_handle_request(project_id))
         except Queue.Empty:
             pass
