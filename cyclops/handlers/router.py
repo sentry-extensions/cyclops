@@ -5,6 +5,7 @@ import re
 from zlib import decompress
 from base64 import b64decode
 from random import randint
+from urlparse import urlparse
 
 import tornado.web
 from ujson import dumps, loads
@@ -13,8 +14,8 @@ from cyclops.hash_calculator import hash_for_grouping
 
 from cyclops.handlers.base import BaseHandler
 
-SENTRY_KEY = re.compile(r'sentry_key\=(.+),')
-SENTRY_SECRET = re.compile(r'sentry_secret\=(.+),?')
+SENTRY_KEY = re.compile(r'sentry_key\=([^,]+),?')
+SENTRY_SECRET = re.compile(r'sentry_secret\=([^,]+),?')
 
 
 class BaseRouterHandler(BaseHandler):
@@ -76,11 +77,8 @@ class BaseRouterHandler(BaseHandler):
         sentry_key = sentry_key.groups()[0]
 
         sentry_secret = SENTRY_SECRET.search(auth)
-        if not sentry_secret:
-            self._404()
-            return
-
-        sentry_secret = sentry_secret.groups()[0]
+        if sentry_secret:
+            sentry_secret = sentry_secret.groups()[0]
 
         if project_id is None:
             project_id = self.get_project_id(sentry_key, sentry_secret)
@@ -92,12 +90,19 @@ class BaseRouterHandler(BaseHandler):
                 self._404()
                 return
 
-        base_url = self.application.config.SENTRY_BASE_URL.replace('http://', '').replace('https://', '')
-        base_url = "%s://%s:%s@%s" % (self.request.protocol, sentry_key, sentry_secret, base_url)
+        uri = urlparse(self.application.config.SENTRY_BASE_URL)
+        if sentry_secret:
+            base_url = "%s://%s:%s@%s" % (uri.scheme, sentry_key, sentry_secret, uri.netloc)
+        else:
+            base_url = "%s://%s@%s" % (uri.scheme, sentry_key, uri.netloc)
+
         url = "%s%s?%s" % (base_url, self.request.path, self.request.query)
 
         try:
-            payload = loads(self.request.body)
+            if 'Content-Encoding' in self.request.headers and self.request.headers['Content-Encoding'] == 'deflate':
+		payload = loads(decompress(self.request.body))
+            else:
+                payload = loads(self.request.body)
         except ValueError:
             payload = loads(decompress(b64decode(self.request.body)))
 
@@ -116,15 +121,23 @@ class BaseRouterHandler(BaseHandler):
 
     def get_project_id(self, public_key, secret_key):
         for project_id, keys in self.application.project_keys.iteritems():
-            if public_key in keys['public_key'] and secret_key in keys['secret_key']:
-                return project_id
+            if public_key in keys['public_key']:
+                if not secret_key:
+                    return project_id
+                if secret_key in keys['secret_key']:
+                    return project_id
         return None
 
     def are_valid_keys(self, project_id, public_key, secret_key):
         keys = self.application.project_keys.get(project_id)
         if keys is None:
             return False
-        return public_key in keys['public_key'] and secret_key in keys['secret_key']
+        if public_key in keys['public_key']:
+            if not secret_key:
+                return True
+
+            return secret_key in keys['secret_key']
+        return False
 
     def frontend_request(self, project_id):
         if self.application.config.RESTRICT_API_ACCESS:
