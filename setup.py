@@ -57,7 +57,7 @@ It keeps items in memory and dumps them at sentry in regular intervals.
         'derpconf==0.3.3',
         'pycurl>=7.19.5.1,<7.20',
         'requests',
-        'ujson==1.30',
+        'ujson==5.4.0',
         'msgpack-python==0.3.0',
         'redis==2.7.2',
         'redis-lock==0.2.0',
